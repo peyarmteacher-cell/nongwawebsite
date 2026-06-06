@@ -105,6 +105,84 @@ function fixGoogleDriveUrl($url) {
     return $url;
 }
 
+/**
+ * ดึง File ID จาก Google Drive URL
+ */
+function getGoogleDriveFileId($url) {
+    if (empty($url)) return null;
+    
+    // แบบที่ 1: lh3.googleusercontent.com/d/FILE_ID
+    if (preg_match('/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/i', $url, $matches)) {
+        return $matches[1];
+    }
+    // แบบที่ 2: id=FILE_ID
+    if (preg_match('/[?&]id=([a-zA-Z0-9_-]+)/i', $url, $matches)) {
+        return $matches[1];
+    }
+    // แบบที่ 3: drive.google.com/file/d/FILE_ID/view
+    if (preg_match('/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i', $url, $matches)) {
+        return $matches[1];
+    }
+    return null;
+}
+
+/**
+ * ลบไฟล์เดิมในเครื่อง หรือส่งทำลายใน Google Drive ผ่าน GAS Web App ป้องกันปัญหาความจุเต็มและรักษารูปภาพปัจจุบันให้ทำงานทันทีสุจริต
+ */
+function deleteOldFileAndCleanUp($old_path_or_url) {
+    if (empty($old_path_or_url)) return;
+
+    // 1. ถ้าเป็นรูปภาพ/ไฟล์ในระบบเซิร์ฟเวอร์โลคอล (เช่น uploads/images/file_xxx.jpg)
+    if (strpos($old_path_or_url, 'uploads/') === 0 || strpos($old_path_or_url, 'uploads/') !== false) {
+        $relative_path = $old_path_or_url;
+        if (strpos($old_path_or_url, 'uploads/') !== false) {
+            $parts = explode('uploads/', $old_path_or_url);
+            $relative_path = 'uploads/' . end($parts);
+        }
+        $abs_path = __DIR__ . '/' . $relative_path;
+        if (file_exists($abs_path)) {
+            @unlink($abs_path);
+        }
+    }
+    
+    // 2. ถ้าเป็นรูปภาพ/ไฟล์บน Google Drive
+    $file_id = getGoogleDriveFileId($old_path_or_url);
+    if ($file_id) {
+        $gas_url = '';
+        global $pdo;
+        if (isset($pdo)) {
+            try {
+                $gas_stmt = $pdo->query("SELECT `google_apps_script_url` FROM `settings` WHERE `id` = 1");
+                if ($gas_stmt) {
+                    $gas_row = $gas_stmt->fetch();
+                    $gas_url = !empty($gas_row['google_apps_script_url']) ? trim($gas_row['google_apps_script_url']) : '';
+                }
+            } catch (Exception $e) {}
+        }
+        
+        if (!empty($gas_url) && filter_var($gas_url, FILTER_VALIDATE_URL)) {
+            // ส่ง JSON payload action delete ไปที่ Google Apps Script เพื่อให้ทำลายภาพทิ้งอัตโนมัติ
+            $payload = json_encode([
+                'action' => 'delete',
+                'fileId' => $file_id
+            ]);
+            
+            $ch = curl_init($gas_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($payload)
+            ]);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+            @curl_exec($ch);
+            @curl_close($ch);
+        }
+    }
+}
+
 // 5. ฟังก์ชันจัดรูปแบบเวลาภาษาไทยแบบย่อ
 function thaiDate($dateStr) {
     if (!$dateStr) return '';

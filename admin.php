@@ -334,6 +334,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             if ($_FILES['school_logo_file']['error'] === 0) { // UPLOAD_ERR_OK
                 $uploaded_logo = uploadFileToServer($_FILES['school_logo_file'], 'jpg,jpeg,png,gif');
                 if ($uploaded_logo) {
+                    if (!empty($existing_sets['school_logo']) && $existing_sets['school_logo'] !== $uploaded_logo) {
+                        deleteOldFileAndCleanUp($existing_sets['school_logo']);
+                    }
                     $school_logo = $uploaded_logo;
                 } else {
                     $upload_warnings[] = "โลโก้โรงเรียน (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
@@ -343,7 +346,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             }
         } else {
             // รักษาค่าเดิม หรือกำหนดตามที่ผู้ใช้เขียนระบุไว้ในฟิตฟิลด์ URL
-            $school_logo = !empty($_POST['school_logo_url']) ? cleanInput($_POST['school_logo_url']) : $school_logo;
+            $new_logo = !empty($_POST['school_logo_url']) ? cleanInput($_POST['school_logo_url']) : '';
+            if (!empty($new_logo) && $new_logo !== $existing_sets['school_logo']) {
+                deleteOldFileAndCleanUp($existing_sets['school_logo']);
+                $school_logo = $new_logo;
+            } else {
+                $school_logo = !empty($new_logo) ? $new_logo : $school_logo;
+            }
         }
         
         // 2. ภาพแบนเนอร์พื้นหลังหลัก
@@ -351,6 +360,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             if ($_FILES['banner_bg_file']['error'] === 0) { // UPLOAD_ERR_OK
                 $uploaded_bg = uploadFileToServer($_FILES['banner_bg_file'], 'jpg,jpeg,png,gif');
                 if ($uploaded_bg) {
+                    if (!empty($existing_sets['banner_bg_image']) && $existing_sets['banner_bg_image'] !== $uploaded_bg) {
+                        deleteOldFileAndCleanUp($existing_sets['banner_bg_image']);
+                    }
                     $banner_bg_image = $uploaded_bg;
                 } else {
                     $upload_warnings[] = "ภาพพื้นหลังแบนเนอร์ (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
@@ -359,7 +371,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 $upload_warnings[] = "ภาพพื้นหลังแบนเนอร์ (ระบบอัปโหลดขัดข้อง: " . getUploadErrorMessage($_FILES['banner_bg_file']['error']) . ")";
             }
         } else {
-            $banner_bg_image = !empty($_POST['banner_bg_url']) ? cleanInput($_POST['banner_bg_url']) : $banner_bg_image;
+            $new_bg = !empty($_POST['banner_bg_url']) ? cleanInput($_POST['banner_bg_url']) : '';
+            if (!empty($new_bg) && $new_bg !== $existing_sets['banner_bg_image']) {
+                deleteOldFileAndCleanUp($existing_sets['banner_bg_image']);
+                $banner_bg_image = $new_bg;
+            } else {
+                $banner_bg_image = !empty($new_bg) ? $new_bg : $banner_bg_image;
+            }
         }
         
         // 3. ภาพตกแต่งหน้าแบนเนอร์ซ้าย
@@ -367,6 +385,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             if ($_FILES['banner_right_file']['error'] === 0) { // UPLOAD_ERR_OK
                 $uploaded_right = uploadFileToServer($_FILES['banner_right_file'], 'jpg,jpeg,png,gif');
                 if ($uploaded_right) {
+                    if (!empty($existing_sets['banner_right_image']) && $existing_sets['banner_right_image'] !== $uploaded_right) {
+                        deleteOldFileAndCleanUp($existing_sets['banner_right_image']);
+                    }
                     $banner_right_image = $uploaded_right;
                 } else {
                     $upload_warnings[] = "ภาพหน้าแบนเนอร์ซ้าย (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
@@ -375,7 +396,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 $upload_warnings[] = "ภาพหน้าแบนเนอร์ซ้าย (ระบบอัปโหลดขัดข้อง: " . getUploadErrorMessage($_FILES['banner_right_file']['error']) . ")";
             }
         } else {
-            $banner_right_image = !empty($_POST['banner_right_url']) ? cleanInput($_POST['banner_right_url']) : $banner_right_image;
+            $new_right = !empty($_POST['banner_right_url']) ? cleanInput($_POST['banner_right_url']) : '';
+            if (!empty($new_right) && $new_right !== $existing_sets['banner_right_image']) {
+                deleteOldFileAndCleanUp($existing_sets['banner_right_image']);
+                $banner_right_image = $new_right;
+            } else {
+                $banner_right_image = !empty($new_right) ? $new_right : $banner_right_image;
+            }
         }
 
         // 4. ภาพถ่ายผู้อำนวยการโรงเรียน (ตัวเพิ่มใหม่สนับสนุนอธิการบดี)
@@ -383,6 +410,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             if ($_FILES['director_image_file']['error'] === 0) { // UPLOAD_ERR_OK
                 $uploaded_dir_img = uploadFileToServer($_FILES['director_image_file'], 'jpg,jpeg,png,gif');
                 if ($uploaded_dir_img) {
+                    if (!empty($existing_sets['director_image']) && $existing_sets['director_image'] !== $uploaded_dir_img) {
+                        deleteOldFileAndCleanUp($existing_sets['director_image']);
+                    }
                     $director_image = $uploaded_dir_img;
                 } else {
                     $upload_warnings[] = "ภาพผู้อำนวยการโรงเรียน (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
@@ -391,7 +421,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 $upload_warnings[] = "ภาพผู้อำนวยการโรงเรียน (ระบบอัปโหลดขัดข้อง: " . getUploadErrorMessage($_FILES['director_image_file']['error']) . ")";
             }
         } else {
-            $director_image = !empty($_POST['director_image']) ? cleanInput($_POST['director_image']) : $director_image;
+            $new_dir_img = !empty($_POST['director_image']) ? cleanInput($_POST['director_image']) : '';
+            if (!empty($new_dir_img) && $new_dir_img !== $existing_sets['director_image']) {
+                deleteOldFileAndCleanUp($existing_sets['director_image']);
+                $director_image = $new_dir_img;
+            } else {
+                $director_image = !empty($new_dir_img) ? $new_dir_img : $director_image;
+            }
         }
 
         $stmt = $pdo->prepare("UPDATE `settings` SET 
