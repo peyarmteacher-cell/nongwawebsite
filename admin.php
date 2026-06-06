@@ -1134,13 +1134,33 @@ $settings = $settingsStmt->fetch();
             });
 
             // ดำเนินการอัปโหลดไฟล์ด่วนแบบ asynchronous
-            uploadBtn.addEventListener('click', function(e) {
+            uploadBtn.addEventListener('click', async function(e) {
                 e.preventDefault();
-                const selectedFile = fileInput.files[0];
+                let selectedFile = fileInput.files[0];
                 if (!selectedFile) return;
 
                 uploadBtn.disabled = true;
                 fileInput.disabled = true;
+
+                // ตรวจระบบและบีบอัดปรับขนาดภาพกล้องมือถือ/ภาพกิจกรรมความละเอียดสูงโดยอัตโนมัติก่อนส่งขึ้นคลาวด์
+                if (selectedFile.type.startsWith('image/')) {
+                    statusSpan.className = "text-[10px] text-amber-600 font-bold animate-pulse";
+                    statusSpan.innerHTML = `⚡ กำลังลดขนาดและปรับความละเอียดภาพกิจกรรมโดยอัตโนมัติ...`;
+                    
+                    try {
+                        const originalSize = selectedFile.size;
+                        const compressedFile = await compressImageIfNeeded(selectedFile, 1600, 1600, 0.75);
+                        if (compressedFile && compressedFile.size < originalSize) {
+                            const savedPercent = Math.round(((originalSize - compressedFile.size) / originalSize) * 100);
+                            console.log(`Compressed: ${formatBytes(originalSize)} => ${formatBytes(compressedFile.size)} (Save ${savedPercent}%)`);
+                            selectedFile = compressedFile;
+                            statusSpan.innerHTML = `✨ ย่อขนาดรูปอัจฉริยะประหยัดพื้นที่คลาวด์ไป ${savedPercent}% (${formatBytes(compressedFile.size)})`;
+                        }
+                    } catch (err) {
+                        console.error('Image compression failed, fallback to original:', err);
+                    }
+                }
+
                 statusSpan.className = "text-[10px] text-blue-600 font-bold animate-pulse";
                 statusSpan.innerHTML = `⏳ กำลังอัปโหลดส่งตรงขึ้น Google Drive แฟ้มโรงเรียน...`;
 
@@ -1229,6 +1249,78 @@ $settings = $settingsStmt->fetch();
                 });
             });
         });
+
+        // ฟังก์ชันบีบอัดภาพและลดขนาดความละเอียดภาพสำหรับกล้องถ่ายภาพความละเอียดสูง
+        function compressImageIfNeeded(file, maxWidth = 1600, maxHeight = 1600, quality = 0.75) {
+            return new Promise((resolve) => {
+                if (!file || !file.type.startsWith('image/')) {
+                    resolve(file);
+                    return;
+                }
+
+                // สำหรับไฟล์รูปภาพที่มีขนาดต่ำกว่า 350KB ไม่จำเป็นต้องลดขนาด/บีบอัด ให้ใช้ต้นฉบับเลย
+                if (file.size < 350 * 1024) {
+                    resolve(file);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        let width = img.width;
+                        let height = img.height;
+
+                        // ตรวจสอบและย่อขนาดเมื่อด้านใดด้านหนึ่งยาวเกินกำหนด
+                        if (width > maxWidth || height > maxHeight) {
+                            if (width > height) {
+                                if (width > maxWidth) {
+                                    height = Math.round((height * maxWidth) / width);
+                                    width = maxWidth;
+                                }
+                            } else {
+                                if (height > maxHeight) {
+                                    width = Math.round((width * maxHeight) / height);
+                                    height = maxHeight;
+                                }
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob(function(blob) {
+                            if (blob) {
+                                let originalName = file.name;
+                                let extIdx = originalName.lastIndexOf('.');
+                                let baseName = extIdx !== -1 ? originalName.substring(0, extIdx) : originalName;
+                                let newName = baseName + '_opt.jpg';
+
+                                const compressedFile = new File([blob], newName, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now()
+                                });
+                                resolve(compressedFile);
+                            } else {
+                                resolve(file);
+                            }
+                        }, 'image/jpeg', quality);
+                    };
+                    img.onerror = function() {
+                        resolve(file);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.onerror = function() {
+                    resolve(file);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
         // ฟังก์ชันช่วยจัดแจงขนาดหน่วยความจำไบต์คอมพิวเตอร์
         function formatBytes(bytes, decimals = 2) {
