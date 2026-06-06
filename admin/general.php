@@ -108,9 +108,22 @@ if (!defined('DB_HOST')) {
 
         <!-- ส่วนสื่ออัปโหลดกราฟิก ตรา และ แบนเนอร์ -->
         <div class="sm:col-span-2 border-t border-slate-100 pt-6 mt-2 space-y-4">
-            <h4 class="font-heading font-black text-sm text-slate-800 flex items-center gap-1.5">
-                🏞️ สื่อตราเครื่องหมายและแบนเนอร์แสดงผลหลัก
+            <h4 class="font-heading font-black text-sm text-slate-800 flex items-center justify-between gap-1.5 flex-wrap">
+                <span>🏞️ สื่อตราเครื่องหมายและแบนเนอร์แสดงผลหลัก</span>
+                <span class="text-[9px] bg-amber-50 text-amber-700 px-3 py-1 rounded-lg border border-amber-200">
+                    ⚙️ ขีดจำกัดเซิร์ฟเวอร์สูงสุด (PHP Limit): <strong><?php echo ini_get('upload_max_filesize'); ?></strong>
+                </span>
             </h4>
+            
+            <!-- ป้ายช่วยให้ความรู้แนะนำขนาดและการแก้ไข -->
+            <div class="text-[10px] text-slate-500 bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-1.5 leading-relaxed font-semibold">
+                <p class="text-slate-700 font-bold flex items-center gap-1">💡 คู่มือการอัปโหลดไฟล์ภาพประกอบระบบ:</p>
+                <ul class="list-disc pl-4 space-y-0.5">
+                    <li><strong>ขนาดไฟล์แนะนำ:</strong> ควรรักษาระดับไฟล์ให้อยู่ระหว่าง <span class="text-pink-600">50 KB ถึง 1 MB</span> เพื่อความเร็วและสอดรับกับข้อกำหนดโฮสติ้งสูงสุด</li>
+                    <li><strong>สัดส่วนที่เหมาะสม:</strong> โลโก้ (สี่เหลี่ยมจัตุรัส 1:1), หน้าแบนเนอร์ซ้าย (สี่เหลี่ยมผืนผ้า 4:3), ภาพและแบนเนอร์พื้นหลัง (ขนาดกว้าง 16:9 เช่น 1200x675px)</li>
+                    <li>หากเลือกอัปโหลดไฟล์แล้วติดขัดปัญหาทางเทคนิค ท่านสามารถเขียน "ลิงก์ภาพภาพตรงภายนอก" ใส่ช่อง URL เพิ่มความสะดวกในการสลับข้อมูลได้ทันที</li>
+                </ul>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- ตราสัญลักษณ์ / โลโก้ -->
@@ -121,6 +134,7 @@ if (!defined('DB_HOST')) {
                     <?php endif; ?>
                     <div class="space-y-2">
                         <input type="file" name="school_logo_file" accept="image/*" class="w-full text-[10px] text-slate-550 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-pink-50 file:text-school-pink hover:file:bg-pink-100">
+                        <p class="text-[9px] text-slate-400 font-medium">รองรับ JPG, PNG, GIF (สูงสุด <?php echo ini_get('upload_max_filesize'); ?>)</p>
                         <input type="text" name="school_logo_url" value="<?php echo htmlspecialchars($settings['school_logo']); ?>" placeholder="หรือระบุเป็น URL ภาพตรง..." class="w-full rounded-lg bg-white border border-pink-100 p-1.5 text-[10px]">
                     </div>
                 </div>
@@ -133,18 +147,20 @@ if (!defined('DB_HOST')) {
                     <?php endif; ?>
                     <div class="space-y-2">
                         <input type="file" name="banner_bg_file" accept="image/*" class="w-full text-[10px] text-slate-550 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-pink-50 file:text-school-pink hover:file:bg-pink-100">
+                        <p class="text-[9px] text-slate-400 font-medium">รองรับ JPG, PNG (สูงสุด <?php echo ini_get('upload_max_filesize'); ?>)</p>
                         <input type="text" name="banner_bg_url" value="<?php echo htmlspecialchars($settings['banner_bg_image']); ?>" placeholder="หรือระบุเป็น URL ภาพตรง..." class="w-full rounded-lg bg-white border border-pink-100 p-1.5 text-[10px]">
                     </div>
                 </div>
 
                 <!-- ภาพหน้าโบกแต่งแบนเนอร์ด้านซ้าย -->
                 <div class="bg-pink-50/10 border border-pink-100/60 rounded-2xl p-4 space-y-3">
-                    <span class="block text-slate-700 font-bold">3. กราฟิก/ภาพแต่งหน้าแบนเนอร์ซ้าย (Banner Left Highlight)</span>
+                    <span class="block text-slate-700 font-bold">3. กราฟิก/ภาพแต่งหน้าแบนเนอร์ซ้าย</span>
                     <?php if (!empty($settings['banner_right_image'])): ?>
                         <img src="<?php echo htmlspecialchars($settings['banner_right_image']); ?>" class="w-20 h-16 object-contain mx-auto bg-white p-1 rounded-lg border border-pink-100">
                     <?php endif; ?>
                     <div class="space-y-2">
                         <input type="file" name="banner_right_file" accept="image/*" class="w-full text-[10px] text-slate-550 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-pink-50 file:text-school-pink hover:file:bg-pink-100">
+                        <p class="text-[9px] text-slate-400 font-medium">รองรับ JPG, PNG (สูงสุด <?php echo ini_get('upload_max_filesize'); ?>)</p>
                         <input type="text" name="banner_right_url" value="<?php echo htmlspecialchars($settings['banner_right_image'] ?? ''); ?>" placeholder="หรือระบุเป็น URL ภาพตรง..." class="w-full rounded-lg bg-white border border-pink-100 p-1.5 text-[10px]">
                     </div>
                 </div>

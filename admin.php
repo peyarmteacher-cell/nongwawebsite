@@ -24,12 +24,50 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 $success_alert = '';
 $err_alert = '';
 
+// ตัวแปรส่วนตัวสำหรับสนับสนุนการจัดหาเหตุผลของการอัปโหลดที่ล้มเหลว
+$global_last_upload_error = '';
+
+/**
+ * ฟังก์ชันช่วยแปลงรหัสข้อผิดพลาดของการอัปโหลดไฟล์ใน PHP
+ */
+function getUploadErrorMessage($errorCode) {
+    if (defined('UPLOAD_ERR_INI_SIZE') && $errorCode === UPLOAD_ERR_INI_SIZE) {
+        $max_size = ini_get('upload_max_filesize');
+        return "ขนาดไฟล์ใหญ่เกินขีดจำกัดสูงสุดที่ระบบเซิร์ฟเวอร์ตั้งไว้ใน php.ini (" . $max_size . "B) กรุณาย่อรูปภาพหรือลดขนาดเอกสารให้ต่ำกว่า " . $max_size . " ก่อนทำรายการใหม่";
+    }
+    switch ($errorCode) {
+        case 2: // UPLOAD_ERR_FORM_SIZE
+            return "ขนาดไฟล์ใหญ่เกินขีดจำกัดความกว้างฟอร์ม (MAX_FILE_SIZE)";
+        case 3: // UPLOAD_ERR_PARTIAL
+            return "การอัปโหลดไฟล์ไม่เสร็จสิ้น มีข้อมูลเคลื่อนย้ายมาเพียงบางส่วน";
+        case 4: // UPLOAD_ERR_NO_FILE
+            return "ไม่พบลายแทงไฟล์ที่ถูกยื่นเข้ามา";
+        case 6: // UPLOAD_ERR_NO_TMP_DIR
+            return "เซิร์ฟเวอร์ระบบขัดข้อง ไม่มีทางผ่านแฟ้มเก็บข้อมูลชั่วคราวหลัก (Temp Directory)";
+        case 7: // UPLOAD_ERR_CANT_WRITE
+            return "เซิร์ฟเวอร์ไม่สามารถเขียนจัดเก็บไฟล์ของท่านลงบนระบบบันทึกข้อมูลดิสก์ได้สำเร็จ (Diskfull/Permission Denied)";
+        case 8: // UPLOAD_ERR_EXTENSION
+            return "การทำงานถูกปิดตัวกลางคันโดย PHP Extension บนเซิร์ฟเวอร์";
+        default:
+            return "ระบบพบข้อผิดพลาดที่ไม่ทราบรหัสต้นตอ: " . $errorCode;
+    }
+}
+
 /**
  * ฟังก์ชันสำหรับช่วยเหลืออัปโหลดไฟล์ระดับสากลแยกโฟลเดอร์อัตโนมัติ
  * แยกไฟล์รูปภาพเข้า uploads/images | ไฟล์ PDF เข้า uploads/pdfs | ไฟล์เอกสารอื่นๆ เข้า uploads/documents
  */
 function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip') {
-    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+    global $global_last_upload_error;
+    $global_last_upload_error = '';
+
+    if (!isset($file)) {
+        $global_last_upload_error = "ไม่มีข้อมูลวัตถุไฟล์ถูกส่งเข้ามาเข้าระบบ";
+        return false;
+    }
+
+    if ($file['error'] !== 0) { // 0 คือ UPLOAD_ERR_OK
+        $global_last_upload_error = getUploadErrorMessage($file['error']);
         return false;
     }
 
@@ -37,6 +75,7 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
     $allowed = explode(',', $allowed_types);
 
     if (!in_array($ext, $allowed)) {
+        $global_last_upload_error = "ไม่รับรองไฟล์สกุล '." . $ext . "' (ช่องทางนี้รองรับเฉพาะ: " . implode(', ', $allowed) . ")";
         return false;
     }
 
@@ -49,16 +88,34 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
         $target_dir = 'uploads/documents/';
     }
 
+    // นำเข้า absolute path ในการชี้พารามิเตอร์ปลายทาง เพื่อป้องกันรันไทม์เปลี่ยน directory ใน sub-include อื่นๆ
+    $abs_target_dir = __DIR__ . '/' . $target_dir;
+
     // ตรวจสอบเช็คสร้างไดเรกทอรีถ้าไม่มี
-    if (!file_exists($target_dir)) {
-        mkdir($target_dir, 0755, true);
+    if (!file_exists($abs_target_dir)) {
+        if (!@mkdir($abs_target_dir, 0777, true)) {
+            $global_last_upload_error = "ระบบไม่สามารถสร้างไดเรกทอรี " . $target_dir . " เพื่อบันทึกไฟล์ได้สำเร็จ (กรุณาให้สิทธิ์ Permission โฟลเดอร์ปลายทาง)";
+            return false;
+        }
     }
+
+    @chmod($abs_target_dir, 0777);
 
     $new_filename = 'file_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
     $target_filepath = $target_dir . $new_filename;
+    $abs_target_filepath = $abs_target_dir . $new_filename;
 
-    if (move_uploaded_file($file['tmp_name'], $target_filepath)) {
+    if (move_uploaded_file($file['tmp_name'], $abs_target_filepath)) {
+        @chmod($abs_target_filepath, 0755);
         return $target_filepath;
+    }
+
+    // เจาะลึกตรวจสอบเหตุผลความผิดพลาดของการก๊อปปี้ไฟล์
+    if (!is_writable($abs_target_dir)) {
+        $global_last_upload_error = "ไม่สามารถบันทึกเก็บข้อมูลย้ายไฟล์ได้เนื่องจากสิทธิ์ในการแก้ไขเขียนของโฟลเดอร์ปลายทาง '" . $target_dir . "' ถูกจำกัด (Not Writable)";
+    } else {
+        $l_err = error_get_last();
+        $global_last_upload_error = "เกิดข้อผิดพลาดรันไทม์ระบบย้ายไฟล์ชั่วคราวล้มเหลว (move_uploaded_file failed)" . ($l_err ? ": " . $l_err['message'] : "");
     }
 
     return false;
@@ -95,40 +152,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
         
         $upload_warnings = [];
 
-        // อัปโหลดโลโก้โรงเรียน
-        if (isset($_FILES['school_logo_file']) && $_FILES['school_logo_file']['error'] === UPLOAD_ERR_OK) {
-            $uploaded_logo = uploadFileToServer($_FILES['school_logo_file'], 'jpg,jpeg,png,gif');
-            if ($uploaded_logo) {
-                $school_logo = $uploaded_logo;
+        // 1. โลโก้โรงเรียน
+        if (isset($_FILES['school_logo_file']) && $_FILES['school_logo_file']['name'] !== '') {
+            if ($_FILES['school_logo_file']['error'] === 0) { // UPLOAD_ERR_OK
+                $uploaded_logo = uploadFileToServer($_FILES['school_logo_file'], 'jpg,jpeg,png,gif');
+                if ($uploaded_logo) {
+                    $school_logo = $uploaded_logo;
+                } else {
+                    $upload_warnings[] = "โลโก้โรงเรียน (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
+                }
             } else {
-                $upload_warnings[] = "โลโก้โรงเรียน";
+                $upload_warnings[] = "โลโก้โรงเรียน (ระบบอัปโหลดขัดข้อง: " . getUploadErrorMessage($_FILES['school_logo_file']['error']) . ")";
             }
         } else {
-            $school_logo = isset($_POST['school_logo_url']) ? cleanInput($_POST['school_logo_url']) : '';
+            // รักษาค่าเดิม หรือกำหนดตามที่ผู้ใช้เขียนระบุไว้ในฟิตฟิลด์ URL
+            $school_logo = !empty($_POST['school_logo_url']) ? cleanInput($_POST['school_logo_url']) : $school_logo;
         }
         
-        // อัปโหลดภาพแบนเนอร์พื้นหลังหลัก
-        if (isset($_FILES['banner_bg_file']) && $_FILES['banner_bg_file']['error'] === UPLOAD_ERR_OK) {
-            $uploaded_bg = uploadFileToServer($_FILES['banner_bg_file'], 'jpg,jpeg,png,gif');
-            if ($uploaded_bg) {
-                $banner_bg_image = $uploaded_bg;
+        // 2. ภาพแบนเนอร์พื้นหลังหลัก
+        if (isset($_FILES['banner_bg_file']) && $_FILES['banner_bg_file']['name'] !== '') {
+            if ($_FILES['banner_bg_file']['error'] === 0) { // UPLOAD_ERR_OK
+                $uploaded_bg = uploadFileToServer($_FILES['banner_bg_file'], 'jpg,jpeg,png,gif');
+                if ($uploaded_bg) {
+                    $banner_bg_image = $uploaded_bg;
+                } else {
+                    $upload_warnings[] = "ภาพพื้นหลังแบนเนอร์ (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
+                }
             } else {
-                $upload_warnings[] = "ภาพพื้นหลังแบนเนอร์";
+                $upload_warnings[] = "ภาพพื้นหลังแบนเนอร์ (ระบบอัปโหลดขัดข้อง: " . getUploadErrorMessage($_FILES['banner_bg_file']['error']) . ")";
             }
         } else {
-            $banner_bg_image = isset($_POST['banner_bg_url']) ? cleanInput($_POST['banner_bg_url']) : '';
+            $banner_bg_image = !empty($_POST['banner_bg_url']) ? cleanInput($_POST['banner_bg_url']) : $banner_bg_image;
         }
         
-        // อัปโหลดภาพประดับขวาแบนเนอร์หลัก
-        if (isset($_FILES['banner_right_file']) && $_FILES['banner_right_file']['error'] === UPLOAD_ERR_OK) {
-            $uploaded_right = uploadFileToServer($_FILES['banner_right_file'], 'jpg,jpeg,png,gif');
-            if ($uploaded_right) {
-                $banner_right_image = $uploaded_right;
+        // 3. ภาพตกแต่งหน้าแบนเนอร์ซ้าย
+        if (isset($_FILES['banner_right_file']) && $_FILES['banner_right_file']['name'] !== '') {
+            if ($_FILES['banner_right_file']['error'] === 0) { // UPLOAD_ERR_OK
+                $uploaded_right = uploadFileToServer($_FILES['banner_right_file'], 'jpg,jpeg,png,gif');
+                if ($uploaded_right) {
+                    $banner_right_image = $uploaded_right;
+                } else {
+                    $upload_warnings[] = "ภาพหน้าแบนเนอร์ซ้าย (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
+                }
             } else {
-                $upload_warnings[] = "ภาพไฮไลท์ขวาแบนเนอร์";
+                $upload_warnings[] = "ภาพหน้าแบนเนอร์ซ้าย (ระบบอัปโหลดขัดข้อง: " . getUploadErrorMessage($_FILES['banner_right_file']['error']) . ")";
             }
         } else {
-            $banner_right_image = isset($_POST['banner_right_url']) ? cleanInput($_POST['banner_right_url']) : '';
+            $banner_right_image = !empty($_POST['banner_right_url']) ? cleanInput($_POST['banner_right_url']) : $banner_right_image;
         }
 
         $stmt = $pdo->prepare("UPDATE `settings` SET 
@@ -177,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
 
         $success_alert = 'อัปเดตข้อมูลทั่วไปของสถานศึกษาโรงเรียนบ้านหนองหว้าเรียบร้อยแล้ว!';
         if (!empty($upload_warnings)) {
-            $success_alert .= ' (⚠️ แต่ไม่สามารถสลับดึงรูปอัปโหลดจริงของ ' . implode(', ', $upload_warnings) . ' ได้ เนื่องจากขนาดไฟล์เกินขีดจำกัด PHP php.ini หรือสิทธิ์เขียนเว็บมีจำกัด ระบบจึงประทับใช้ค่าเดิมหรือ URL ตรงที่มีอยู่แทน)';
+            $success_alert .= '<br><div class="mt-2 text-[11px] text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200"><strong>⚠️ ข้อแนะนำเกี่ยวกับการจัดการสื่อประกอบ:</strong><ul class="list-disc pl-4 mt-1 space-y-1"><li>' . implode('</li><li>', $upload_warnings) . '</li></ul><p class="mt-1.5 font-bold text-slate-700">💡 คำแนะนำ: หากไม่สามารถตัดอัปโหลดไฟล์เข้ามาได้เนื่องจากสัญญานหรือขนาดขีดจำกัดสูงสุดของเซิร์ฟเวอร์ ท่านสามารถเลือกฝากรูปภาพกับบริการออนไลน์ภายนอก และนำลิงก์พาร์ทตรง (.jpg/.png) มาใส่ที่ช่อง "หรือระบุเป็น URL ภาพตรง" ทดแทนได้เลยครับ!</p></div>';
         }
     } catch (Exception $e) {
         $err_alert = 'เกิดข้อผิดพลาดในการบันทึกข้อมูลทั่วไป: ' . $e->getMessage();
