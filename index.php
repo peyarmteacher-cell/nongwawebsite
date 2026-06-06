@@ -293,7 +293,7 @@ foreach ($students_list as $std) {
 
             <!-- ฝั่งขวา: ข้อความและปุ่มคำสั่งหลัก ของหน้าโฮมเพจ (ย้ายมาฝั่งขวา ตกแต่งขอบเกลี่ยภาพสมดุล) -->
             <div class="space-y-6 w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left order-2 lg:order-2">
-                <span class="inline-block bg-school-pink/15 text-pink-300 border border-school-pink/30 text-[10px] tracking-widest uppercase font-black px-4 py-1.5 rounded-full shadow-inner">
+                <span class="inline-block bg-school-pink/15 text-pink-300 border border-school-pink/30 text-xs sm:text-sm md:text-base tracking-wider uppercase font-black px-5 py-2.5 rounded-full shadow-inner transition-transform duration-300">
                     <?php echo htmlspecialchars($settings['banner_title'] ?? 'ยินดีต้อนรับสู่รั้วชมพู-ขาว แหล่งการศึกษาระดับเยาวชนต้นแบบ'); ?>
                 </span>
                 
