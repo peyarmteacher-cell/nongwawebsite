@@ -385,6 +385,41 @@ try {
                 }
             }
         }
+
+        // ขยายขนาดคอลัมน์รูปภาพและลิงก์อื่นๆ เพื่อไม่ให้ติดปัญหาข้อมูลยาวเกิน 255 ตัวอักษร (String data, right truncated) - อัตโนมัติป้องกัน Error 1406
+        $column_resizes = [
+            'settings' => [
+                'director_image' => "ALTER TABLE `settings` MODIFY COLUMN `director_image` text DEFAULT NULL",
+                'school_logo' => "ALTER TABLE `settings` MODIFY COLUMN `school_logo` text DEFAULT NULL",
+                'banner_bg_image' => "ALTER TABLE `settings` MODIFY COLUMN `banner_bg_image` text DEFAULT NULL",
+                'banner_right_image' => "ALTER TABLE `settings` MODIFY COLUMN `banner_right_image` text DEFAULT NULL",
+                'youtube_intro_url' => "ALTER TABLE `settings` MODIFY COLUMN `youtube_intro_url` text DEFAULT NULL"
+            ],
+            'teachers' => [
+                'image_url' => "ALTER TABLE `teachers` MODIFY COLUMN `image_url` text DEFAULT NULL",
+                'pa_link_url' => "ALTER TABLE `teachers` MODIFY COLUMN `pa_link_url` text DEFAULT NULL",
+                'portfolio_url' => "ALTER TABLE `teachers` MODIFY COLUMN `portfolio_url` text DEFAULT NULL"
+            ],
+            'news' => [
+                'image_url' => "ALTER TABLE `news` MODIFY COLUMN `image_url` text DEFAULT NULL"
+            ],
+            'downloads' => [
+                'file_url' => "ALTER TABLE `downloads` MODIFY COLUMN `file_url` text DEFAULT NULL"
+            ],
+            'banners' => [
+                'image_url' => "ALTER TABLE `banners` MODIFY COLUMN `image_url` text DEFAULT NULL"
+            ]
+        ];
+
+        foreach ($column_resizes as $tableName => $cols) {
+            foreach ($cols as $colName => $alterSql) {
+                try {
+                    $pdo->exec($alterSql);
+                } catch (Exception $e) {
+                    // ข้ามกรณี SQLite หรือกรณีที่ไม่สามารถ Modify Column ได้โดยตรง
+                }
+            }
+        }
     }
 
     // เพิ่มฟิลด์ google_apps_script_url และ google_drive_folder_id แบบสากล (รองรับทั้ง SQLite และ MySQL)

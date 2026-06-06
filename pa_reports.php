@@ -71,7 +71,7 @@ try {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <a href="index.php" class="flex items-center gap-3 group">
                 <?php if (!empty($settings['school_logo'])): ?>
-                    <img src="<?php echo htmlspecialchars($settings['school_logo']); ?>" alt="School Logo" class="h-12 w-12 object-contain rounded-full shadow-md group-hover:scale-105 transition-all" referrerPolicy="no-referrer">
+                    <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($settings['school_logo'])); ?>" alt="School Logo" class="h-12 w-12 object-contain rounded-full shadow-md group-hover:scale-105 transition-all" referrerPolicy="no-referrer">
                 <?php else: ?>
                     <div class="h-12 w-12 rounded-full bg-gradient-to-tr from-school-pink to-pink-300 flex items-center justify-center text-white font-black text-xl shadow-md group-hover:scale-105 transition-all">
                         นห
