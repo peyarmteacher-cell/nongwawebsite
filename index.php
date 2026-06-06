@@ -506,40 +506,8 @@ foreach ($students_list as $std) {
         <!-- 5.4 ข้อมูลสถิตินักเรียน (Interactive Student Demographics & Yearly Comparison) -->
         <section id="stats" class="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch scroll-mt-24">
             
-            <!-- 1. การจำแนกเพศของนักเรียน (lg:col-span-3) -->
-            <div class="md:col-span-6 lg:col-span-3 bg-white rounded-3xl p-6 shadow-sm border border-pink-50 space-y-6 flex flex-col justify-between">
-                <div>
-                    <h3 class="text-lg font-heading font-black text-slate-900 leading-tight">สัดส่วนประชากรตามเพศ</h3>
-                    <p class="text-[10px] text-slate-400 font-semibold tracking-wider uppercase mt-1">สมดุลเพศของนักเรียนปีการศึกษาปัจจุบัน (<?php echo htmlspecialchars($active_current_year); ?>)</p>
-                </div>
-                
-                <div class="flex gap-4 justify-between items-center py-4">
-                    <div class="text-center flex-1 py-4 bg-blue-50/40 rounded-2xl border border-blue-100/30">
-                        <span class="text-blue-500 font-extrabold text-2xl font-heading">ชาย</span>
-                        <div class="text-base font-black text-slate-800 mt-1"><?php echo htmlspecialchars($boy_count_computed); ?> คน</div>
-                        <span class="text-[9px] text-slate-400 font-bold">ประมาณ 49%</span>
-                    </div>
-                    <div class="text-center flex-1 py-4 bg-pink-50/40 rounded-2xl border border-pink-100/30">
-                        <span class="text-school-pink font-extrabold text-2xl font-heading">หญิง</span>
-                        <div class="text-base font-black text-slate-800 mt-1"><?php echo htmlspecialchars($girl_count_computed); ?> คน</div>
-                        <span class="text-[9px] text-slate-400 font-bold">ประมาณ 51%</span>
-                    </div>
-                </div>
-
-                <div class="space-y-2 mt-auto">
-                    <div class="flex justify-between text-[10px] font-bold text-slate-500">
-                        <span>ชาย : หญิง (1:1 โดยประมาณ)</span>
-                        <span>สัดส่วนสัมพันธ์</span>
-                    </div>
-                    <div class="w-full bg-blue-100 rounded-full h-2 overflow-hidden flex">
-                        <div class="bg-blue-500 h-full" style="width: 49%"></div>
-                        <div class="bg-school-pink h-full" style="width: 51%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. รายละเอียดระดับชั้นและการกระจายตัวของประชากรประจำปีปัจจุบัน (lg:col-span-5) -->
-            <div class="md:col-span-6 lg:col-span-5 bg-white rounded-3xl p-6 shadow-sm border border-pink-50 space-y-5 flex flex-col justify-between">
+            <!-- 2. รายละเอียดระดับชั้นและการกระจายตัวของประชากรประจำปีปัจจุบัน (lg:col-span-7) -->
+            <div class="md:col-span-12 lg:col-span-7 bg-white rounded-3xl p-6 shadow-sm border border-pink-50 space-y-5 flex flex-col justify-between">
                 <div>
                     <h3 class="text-base sm:text-lg font-heading font-black text-slate-900 leading-tight">สถิตินักเรียนรายระดับชั้นเรียน</h3>
                     <p class="text-[10px] text-slate-400 font-semibold tracking-wider uppercase mt-1">ประจำปีการศึกษา <?php echo htmlspecialchars($active_current_year); ?> (รวม <?php echo number_format($total_students_count); ?> คน)</p>
@@ -564,8 +532,8 @@ foreach ($students_list as $std) {
                 </div>
             </div>
 
-            <!-- 3. แผนภูมิเปรียบเทียบจำนวนนักเรียนรายปีการศึกษา (lg:col-span-4) -->
-            <div class="md:col-span-12 lg:col-span-4 bg-gradient-to-br from-indigo-950 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-900/30 flex flex-col justify-between space-y-6 animate-fadeIn">
+            <!-- 3. แผนภูมิเปรียบเทียบจำนวนนักเรียนรายปีการศึกษา (lg:col-span-5) -->
+            <div class="md:col-span-12 lg:col-span-5 bg-gradient-to-br from-indigo-950 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-900/30 flex flex-col justify-between space-y-6 animate-fadeIn">
                 <div>
                     <h3 class="text-base sm:text-lg font-heading font-black text-pink-300 leading-tight flex items-center gap-1.5">
                         📈 เปรียบเทียบประชากรนักเรียนรายปี

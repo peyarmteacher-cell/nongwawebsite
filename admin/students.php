@@ -12,7 +12,7 @@ if (!defined('DB_HOST')) {
 // ----------------------------------------------------
 // 0. แท็บภายในโมดูลนักเรียน (Roster vs Yearly Stats)
 // ----------------------------------------------------
-$sub_tab = isset($_GET['sub']) ? cleanInput($_GET['sub']) : 'roster';
+$sub_tab = 'stats';
 
 // โหลดข้อมูลการตั้งค่าโรงเรียน เพื่อดูว่าปีการศึกษาใดเป็นปัจจุบัน
 $settingsStmt = $pdo->query("SELECT current_academic_year FROM `settings` WHERE `id` = 1");
@@ -190,50 +190,15 @@ if ($sub_tab === 'stats') {
                 $del_stmt->execute(['year' => $del_year]);
                 $success_yearly_alert = '🗑️ ลบข้อมูลสารสนเทศอัตราเฉลี่ยส่วนนักเรียนของปีการศึกษา ' . htmlspecialchars($del_year) . ' เรียบร้อยพรักพร้อม!';
             } catch (Exception $e) {
-                $err_yearly_alert = 'เกิดข้อเจ็บป่วยระบบคัดสำเนา: ' . $e->getMessage();
+                $err_yearly_alert = 'เกิดข้อผิดพลาดในการลบปีการศึกษา: ' . $e->getMessage();
             }
         }
     }
 }
 
-
 // =======================================
 // 2. โหลดแฟ้มประชากรประมวลผลสำหรับแสดงผล UI
 // =======================================
-
-// --- โหลดข้อมูล นักเรียนรายบุคคล (Roster) ---
-$students_list = [];
-$search_query = isset($_GET['search']) ? cleanInput($_GET['search']) : '';
-$filter_grade = isset($_GET['f_grade']) ? cleanInput($_GET['f_grade']) : '';
-
-if ($sub_tab === 'roster') {
-    $sql_students = "SELECT * FROM `students` WHERE 1=1";
-    $params_students = [];
-
-    if (!empty($search_query)) {
-        $sql_students .= " AND `name` LIKE :search";
-        $params_students['search'] = '%' . $search_query . '%';
-    }
-
-    if (!empty($filter_grade)) {
-        $sql_students .= " AND `grade` = :grade";
-        $params_students['grade'] = $filter_grade;
-    }
-
-    $sql_students .= " ORDER BY `id` DESC";
-    $std_stmt = $pdo->prepare($sql_students);
-    $std_stmt->execute($params_students);
-    $students_list = $std_stmt->fetchAll();
-
-    // ดึงตัวละครเพื่อกำลังแก้ไขอยู่
-    $edit_std_item = null;
-    if (isset($_GET['edit_std'])) {
-        $edit_std_id = intval($_GET['edit_std']);
-        $stmt_edit_std = $pdo->prepare("SELECT * FROM `students` WHERE `id` = :id");
-        $stmt_edit_std->execute(['id' => $edit_std_id]);
-        $edit_std_item = $stmt_edit_std->fetch();
-    }
-}
 
 // --- โหลดสถิติดลประชากรประปีการศึกษาและสรุป (Yearly Stats) ---
 $years_stmt = $pdo->query("SELECT DISTINCT `academic_year` FROM `student_yearly_stats` ORDER BY `academic_year` DESC");
@@ -262,18 +227,6 @@ try {
 } catch (Exception $e) {}
 ?>
 
-<!-- ซับแท็บบาร์ระดับโมดูลการทบทวนรายบุคคลและสถิติตารางรวม -->
-<div class="flex flex-col sm:flex-row border-b border-pink-100 mb-6 font-heading font-black text-xs gap-px select-none bg-slate-50/50 p-1.5 rounded-2xl">
-    <a href="admin.php?tab=students&sub=roster" 
-       class="flex-1 text-center py-3.5 px-6 rounded-xl transition-all duration-200 <?php echo $sub_tab === 'roster' ? 'bg-white text-school-pink shadow-sm border border-pink-100 font-extrabold' : 'text-slate-500 hover:text-slate-800 hover:bg-white/40 font-bold'; ?>">
-        🧑‍🎓 ระบบฐานข้อมูลรายชื่อนักเรียนรายบุคคล (Roster)
-    </a>
-    <a href="admin.php?tab=students&sub=stats" 
-       class="flex-1 text-center py-3.5 px-6 rounded-xl transition-all duration-200 <?php echo $sub_tab === 'stats' ? 'bg-white text-school-pink shadow-sm border border-pink-100 font-extrabold' : 'text-slate-500 hover:text-slate-800 hover:bg-white/40 font-bold'; ?>">
-        📊 ระบบจัดทำสถิติความเปรียบเทียบเชิงวิชาการรายปี (Stats)
-    </a>
-</div>
-
 <!-- ส่วนประกาศสิทธิ์ความแจ้งเตือนหน้าต่าง -->
 <?php if (!empty($success_yearly_alert)): ?>
     <div class="bg-green-50 rounded-2xl p-4 text-green-700 text-xs font-bold border border-green-100 flex items-center gap-2 mb-6">
@@ -291,225 +244,8 @@ try {
 
 
 <!-- ========================================================
-     TAB 1: รายการรายละเอียดข้อมูลนักเรียนรายบุคคล (Roster)
+     สถิติตารางประชากรนักเรียนรายปีการศึกษา (Stats Only)
      ======================================================== -->
-<?php if ($sub_tab === 'roster'): ?>
-
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
-    
-    <!-- ฝั่งซ้าย: กล่องแก้ไขสารระบุนักเรียนรายตนเอง (5/12) -->
-    <div class="lg:col-span-5 space-y-6">
-        
-        <?php if ($edit_std_item): ?>
-            <!-- กล่องฟอร์มเขียนปรับแก้นามนักเรียนเดิม -->
-            <div class="bg-indigo-950 text-slate-100 rounded-3xl p-6 border border-slate-800 shadow-md space-y-4">
-                <div class="flex items-center justify-between border-b border-indigo-900/50 pb-3">
-                    <h4 class="font-heading font-black text-xs sm:text-sm text-pink-300">✏️ แก้ไขทะเบียนข้อมูลนักเรียน (#<?php echo $edit_std_item['id']; ?>)</h4>
-                    <a href="admin.php?tab=students&sub=roster" class="text-[10px] bg-indigo-900 border border-indigo-800 hover:bg-indigo-850 p-1.5 rounded text-white font-bold">ยกเลิก</a>
-                </div>
-                
-                <form action="admin.php?tab=students&sub=roster" method="POST" class="space-y-4 text-xs font-semibold text-slate-300">
-                    <input type="hidden" name="edit_student_submit_btn" value="1">
-                    <input type="hidden" name="std_id" value="<?php echo $edit_std_item['id']; ?>">
-
-                    <div class="space-y-1">
-                        <label class="block">ชื่อ - นามสกุล นักเรียน</label>
-                        <input type="text" name="std_name" required value="<?php echo htmlspecialchars($edit_std_item['name']); ?>" class="w-full rounded-xl bg-indigo-900 border border-indigo-850 p-2.5 text-xs text-white focus:ring-1 focus:ring-school-pink outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="space-y-1">
-                            <label class="block">ระดับชั้นเรียน</label>
-                            <select name="std_grade" class="w-full rounded-xl bg-indigo-900 border border-indigo-850 p-2.5 text-xs font-bold text-white focus:ring-1 focus:ring-school-pink outline-none">
-                                <option value="อนุบาล 2" <?php echo ($edit_std_item['grade'] == 'อนุบาล 2') ? 'selected' : ''; ?>>อนุบาล 2</option>
-                                <option value="อนุบาล 3" <?php echo ($edit_std_item['grade'] == 'อนุบาล 3') ? 'selected' : ''; ?>>อนุบาล 3</option>
-                                <option value="ประถมศึกษาปีที่ 1" <?php echo ($edit_std_item['grade'] == 'ประถมศึกษาปีที่ 1') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 1</option>
-                                <option value="ประถมศึกษาปีที่ 2" <?php echo ($edit_std_item['grade'] == 'ประถมศึกษาปีที่ 2') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 2</option>
-                                <option value="ประถมศึกษาปีที่ 3" <?php echo ($edit_std_item['grade'] == 'ประถมศึกษาปีที่ 3') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 3</option>
-                                <option value="ประถมศึกษาปีที่ 4" <?php echo ($edit_std_item['grade'] == 'ประถมศึกษาปีที่ 4') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 4</option>
-                                <option value="ประถมศึกษาปีที่ 5" <?php echo ($edit_std_item['grade'] == 'ประถมศึกษาปีที่ 5') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 5</option>
-                                <option value="ประถมศึกษาปีที่ 6" <?php echo ($edit_std_item['grade'] == 'ประถมศึกษาปีที่ 6') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 6</option>
-                            </select>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="block">ระบุห้องเรียน (เช่น 1/1, 1/2)</label>
-                            <input type="text" name="std_classroom" value="<?php echo htmlspecialchars($edit_std_item['classroom']); ?>" class="w-full rounded-xl bg-indigo-900 border border-indigo-850 p-2.5 text-xs text-white focus:ring-1 focus:ring-school-pink outline-none">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block">ระบุเพศภาวะ</label>
-                        <div class="flex gap-4 pt-1 text-white">
-                            <label class="flex items-center gap-1.5 cursor-pointer">
-                                <input type="radio" name="std_gender" value="ชาย" <?php echo ($edit_std_item['gender'] == 'ชาย') ? 'checked' : ''; ?> class="accent-school-pink">
-                                เด็กชาย
-                            </label>
-                            <label class="flex items-center gap-1.5 cursor-pointer">
-                                <input type="radio" name="std_gender" value="หญิง" <?php echo ($edit_std_item['gender'] == 'หญิง') ? 'checked' : ''; ?> class="accent-school-pink">
-                                เด็กหญิง
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-school-pink hover:bg-school-pink-dark text-white font-black py-2.5 rounded text-xs shadow-md">
-                        💾 บันทึกแก้ไขข้อมูลงทะเบียนรายคน
-                    </button>
-                </form>
-            </div>
-        <?php else: ?>
-            <!-- กล่องฟอร์มเขียนขึ้นทะเบียนใหม่ -->
-            <div class="bg-white rounded-3xl p-6 border border-pink-50 shadow-sm space-y-4">
-                <h4 class="font-heading font-black text-sm text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                    🧑‍🎓 ขึ้นทะเบียนนักเรียนในฐานข้อมูลรายบุคคล
-                </h4>
-                
-                <form action="admin.php?tab=students&sub=roster" method="POST" class="space-y-4 text-xs font-semibold text-slate-600">
-                    <input type="hidden" name="add_student_btn" value="1">
-
-                    <div class="space-y-1">
-                        <label class="block">ชื่อ - นามสกุล นักเรียน</label>
-                        <input type="text" name="std_name" required placeholder="นาย/เด็กชาย/เด็กหญิง..." class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-school-pink outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="space-y-1">
-                            <label class="block">ระดับชั้นเรียน</label>
-                            <select name="std_grade" class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-bold bg-white focus:ring-1 focus:ring-school-pink outline-none">
-                                <option value="อนุบาล 2">อนุบาล 2</option>
-                                <option value="อนุบาล 3">อนุบาล 3</option>
-                                <option value="ประถมศึกษาปีที่ 1">ประถมศึกษาปีที่ 1</option>
-                                <option value="ประถมศึกษาปีที่ 2">ประถมศึกษาปีที่ 2</option>
-                                <option value="ประถมศึกษาปีที่ 3">ประถมศึกษาปีที่ 3</option>
-                                <option value="ประถมศึกษาปีที่ 4">ประถมศึกษาปีที่ 4</option>
-                                <option value="ประถมศึกษาปีที่ 5">ประถมศึกษาปีที่ 5</option>
-                                <option value="ประถมศึกษาปีที่ 6">ประถมศึกษาปีที่ 6</option>
-                            </select>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="block">ห้องเรียน (เช่น 1, 2)</label>
-                            <input type="text" name="std_classroom" placeholder="เช่น 1 หรือ 1/1" class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-school-pink outline-none">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-slate-500 font-bold">เพศกำเนิด</label>
-                        <div class="flex gap-4 pt-1">
-                            <label class="flex items-center gap-1.5 cursor-pointer">
-                                <input type="radio" name="std_gender" value="ชาย" checked class="accent-school-pink">
-                                เด็กชาย
-                            </label>
-                            <label class="flex items-center gap-1.5 cursor-pointer">
-                                <input type="radio" name="std_gender" value="หญิง" class="accent-school-pink">
-                                เด็กหญิง
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-950 text-white font-black py-3 rounded-2xl transition shadow text-xs">
-                        🚀 บันทึกรายชื่อคนเข้าฐานทะเบียน
-                    </button>
-                </form>
-            </div>
-        <?php endif; ?>
-    </div>
-
-    <!-- ฝั่งขวา: รายชื่อทะเบียนนักเรียนรายวิถีสยาม และ ช่องค้นหากรองสารบัญชั้นห้อง (7/12) -->
-    <div class="lg:col-span-7 space-y-6">
-        
-        <!-- แผนผังกล่องตารางรายชื่อพรั่งรัก -->
-        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
-            
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-3 gap-3">
-                <h4 class="font-heading font-black text-sm text-slate-800">
-                    📂 ทะเบียนข้อมูลประวัติรายบุคคลนักเรียน
-                </h4>
-            </div>
-
-            <!-- กล่องเงื่อนไขค้นหา ฟิลเตอร์อย่างยืดหยุ่น -->
-            <form action="admin.php" method="GET" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <input type="hidden" name="tab" value="students">
-                <input type="hidden" name="sub" value="roster">
-                
-                <div class="space-y-0.5">
-                    <input type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" placeholder="🔍 ค้นหาด้วยชื่อภาษาไทย..." class="w-full rounded-xl border border-slate-200/85 p-2 text-xs font-medium focus:border-school-pink outline-none">
-                </div>
-
-                <div class="space-y-0.5">
-                    <select name="f_grade" class="w-full rounded-xl border border-slate-200/85 p-2 text-xs font-bold bg-white focus:border-school-pink outline-none">
-                        <option value="">ทั้งหมดทุกระดับชั้น</option>
-                        <option value="อนุบาล 2" <?php echo ($filter_grade == 'อนุบาล 2') ? 'selected' : ''; ?>>อนุบาล 2</option>
-                        <option value="อนุบาล 3" <?php echo ($filter_grade == 'อนุบาล 3') ? 'selected' : ''; ?>>อนุบาล 3</option>
-                        <option value="ประถมศึกษาปีที่ 1" <?php echo ($filter_grade == 'ประถมศึกษาปีที่ 1') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 1</option>
-                        <option value="ประถมศึกษาปีที่ 2" <?php echo ($filter_grade == 'ประถมศึกษาปีที่ 2') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 2</option>
-                        <option value="ประถมศึกษาปีที่ 3" <?php echo ($filter_grade == 'ประถมศึกษาปีที่ 3') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 3</option>
-                        <option value="ประถมศึกษาปีที่ 4" <?php echo ($filter_grade == 'ประถมศึกษาปีที่ 4') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 4</option>
-                        <option value="ประถมศึกษาปีที่ 5" <?php echo ($filter_grade == 'ประถมศึกษาปีที่ 5') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 5</option>
-                        <option value="ประถมศึกษาปีที่ 6" <?php echo ($filter_grade == 'ประถมศึกษาปีที่ 6') ? 'selected' : ''; ?>>ประถมศึกษาปีที่ 6</option>
-                    </select>
-                </div>
-
-                <div>
-                    <button type="submit" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold p-2 rounded-xl transition text-center select-none">
-                        🔍 ค้นหาเจาะลึก
-                    </button>
-                </div>
-            </form>
-
-            <div class="overflow-x-auto pt-2">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 font-bold whitespace-nowrap">
-                            <th class="p-3">รหัสลำดับ</th>
-                            <th class="p-3">ชื่อ - นามสกุล นักเรียน</th>
-                            <th class="p-3">ระดับชั้นเรียน / ห้อง</th>
-                            <th class="p-3 text-center">เพศภาวะ</th>
-                            <th class="p-3 text-right">ดำเนินการ</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                        <?php if (empty($students_list)): ?>
-                            <tr>
-                                <td colspan="5" class="p-4 text-center text-slate-400 font-bold">ไม่พบค้นพบสารบบรายชื่อนักเรียนรายบุคคลเป็นทางการในเงื่อนไขนี้</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($students_list as $std): ?>
-                                <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="p-3 text-slate-450 font-bold">#<?php echo htmlspecialchars($std['id']); ?></td>
-                                    <td class="p-3">
-                                        <div class="font-bold text-slate-800 flex items-center gap-1.5">
-                                            <span class="w-1.5 h-1.5 rounded-full <?php echo ($std['gender'] === 'ชาย') ? 'bg-sky-400' : 'bg-pink-400'; ?>"></span>
-                                            <?php echo htmlspecialchars($std['name']); ?>
-                                        </div>
-                                    </td>
-                                    <td class="p-3 font-semibold text-slate-600">
-                                        <?php echo htmlspecialchars($std['grade']); ?> / ห้อง <?php echo htmlspecialchars($std['classroom']); ?>
-                                    </td>
-                                    <td class="p-3 text-center">
-                                        <span class="inline-block px-2 py-0.5 rounded-md font-extrabold text-[9px] <?php echo ($std['gender'] === 'ชาย') ? 'bg-sky-50 text-sky-600' : 'bg-pink-50 text-school-pink'; ?>">
-                                            <?php echo htmlspecialchars($std['gender']); ?>
-                                        </span>
-                                    </td>
-                                    <td class="p-3 text-right space-x-1 whitespace-nowrap select-none">
-                                        <a href="admin.php?tab=students&sub=roster&edit_std=<?php echo $std['id']; ?>" class="text-[10px] font-bold text-slate-600 hover:text-indigo-600 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded transition border border-slate-100">แก้ไข</a>
-                                        <a href="admin.php?tab=students&sub=roster&delete_std=<?php echo $std['id']; ?>" onclick="return confirm('⚠️ แน่ใจหรือไม่ต้องการลบนักเรียนรายบุคคลคนนี้ออกจากสารประบบฐานข้อมูล? ข้อมูลนี้ไม่ย้อนหลังคืนกลับได้')" class="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition border border-rose-100">ลบ</a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- ========================================================
-     TAB 2: สถิตินักเรียนรายปีเปรียบเทียบวิชาการ (Stats)
-     ======================================================== -->
-<?php elseif ($sub_tab === 'stats'): ?>
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
     
