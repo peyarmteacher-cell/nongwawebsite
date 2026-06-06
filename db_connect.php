@@ -360,6 +360,13 @@ try {
         }
     }
 
+    // เพิ่มฟิลด์ google_apps_script_url แบบสากล (รองรับทั้ง SQLite และ MySQL)
+    try {
+        $pdo->exec("ALTER TABLE `settings` ADD COLUMN `google_apps_script_url` text DEFAULT NULL;");
+    } catch (Exception $col_err) {
+        // หากคอลัมน์มีอยู่แล้วจะเกิด Exception ซึ่งเราข้ามได้ทันทีอย่างปลอดภัย
+    }
+
     // ค) การใส่ข้อมูลแรกเริ่ม (Seeding Defaults if empty)
     $countSettings = $pdo->query("SELECT id FROM `settings` LIMIT 1")->fetch();
     if (!$countSettings) {

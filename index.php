@@ -278,24 +278,14 @@ foreach ($students_list as $std) {
         <div class="absolute inset-y-0 right-0 w-full lg:w-1/2 z-0">
             <img src="<?php echo htmlspecialchars($banner_bg); ?>" alt="Banner Background" class="w-full h-full object-cover opacity-35 lg:opacity-60 filter brightness-90 contrast-105" referrerPolicy="no-referrer">
             <!-- ไล่ระดับสีคู่ตรงข้าม จากสีดำเข้มฝั่งซ้ายเฟดมารองรับภาพทางฝั่งขวา -->
-            <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent pointer-events-none"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent pointer-events-none"></div>
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none lg:hidden"></div>
         </div>
         
         <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-12 w-full text-white">
             
-            <!-- ฝั่งซ้าย: แบนเนอร์ไฮไลท์ตกแต่ง (Banner Left Highlight) ย้ายมาอยู่ฝั่งซ้ายตรงข้ามกับภาพพื้นหลังเรียบร้อย -->
-            <div class="w-full lg:w-5/12 flex justify-center lg:justify-start relative z-20 animate-fade-in order-2 lg:order-1">
-                <div class="relative p-2.5 rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl hover:scale-[1.03] hover:rotate-1 transition-all duration-300 max-w-sm w-full">
-                    <img id="banner_right_img" src="<?php echo htmlspecialchars($banner_right); ?>" alt="Banner Left Highlight" class="w-full h-72 object-cover rounded-2.5xl shadow-inner border border-white/10" referrerPolicy="no-referrer">
-                    <div class="absolute -bottom-3 -right-3 bg-gradient-to-r from-school-pink to-pink-500 font-bold text-[11px] uppercase text-white px-4 py-1.5 rounded-full shadow-lg border border-pink-400">
-                        ตราแบนเนอร์ ชมพู-ขาว
-                    </div>
-                </div>
-            </div>
-
-            <!-- ฝั่งขวา: ข้อความและปุ่มคำสั่งหลัก ของหน้าโฮมเพจ -->
-            <div class="space-y-6 w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left order-1 lg:order-2">
+            <!-- ฝั่งซ้าย: ข้อความและปุ่มคำสั่งหลัก ของหน้าโฮมเพจ (ย้ายมาฝั่งซ้ายเพื่อเลี่ยงภาพลายตาและเพิ่มความคมชัดสูงสุด) -->
+            <div class="space-y-6 w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left order-1 lg:order-1">
                 <span class="inline-block bg-school-pink/15 text-pink-300 border border-school-pink/30 text-[10px] tracking-widest uppercase font-black px-4 py-1.5 rounded-full shadow-inner">
                     <?php echo htmlspecialchars($settings['banner_title'] ?? 'ยินดีต้อนรับสู่รั้วชมพู-ขาว แหล่งการศึกษาระดับเยาวชนต้นแบบ'); ?>
                 </span>
@@ -317,6 +307,16 @@ foreach ($students_list as $std) {
                     <a href="#teachers" class="bg-white/10 hover:bg-white/15 text-white backdrop-blur px-7 py-3.5 rounded-2xl font-semibold border border-white/20 transition-all hover:translate-y-[-2px] text-sm">
                         ทำเนียบข้าราชการครู
                     </a>
+                </div>
+            </div>
+
+            <!-- ฝั่งขวา: แบนเนอร์ไฮไลท์ตกแต่ง (Banner Right Highlight) ย้ายมาอยู่ฝั่งขวาคู่กับเบลนดิ้งภาพพื้นหลังสวยงาม -->
+            <div class="w-full lg:w-5/12 flex justify-center lg:justify-end relative z-20 animate-fade-in order-2 lg:order-2">
+                <div class="relative p-2.5 rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl hover:scale-[1.03] hover:rotate-1 transition-all duration-300 max-w-sm w-full">
+                    <img id="banner_right_img" src="<?php echo htmlspecialchars($banner_right); ?>" alt="Banner Right Highlight" class="w-full h-72 object-cover rounded-2.5xl shadow-inner border border-white/10" referrerPolicy="no-referrer">
+                    <div class="absolute -bottom-3 -right-3 bg-gradient-to-r from-school-pink to-pink-500 font-bold text-[11px] uppercase text-white px-4 py-1.5 rounded-full shadow-lg border border-pink-400">
+                        ตราแบนเนอร์ ชมพู-ขาว
+                    </div>
                 </div>
             </div>
 

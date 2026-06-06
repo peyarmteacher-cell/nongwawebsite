@@ -106,6 +106,96 @@ if (!defined('DB_HOST')) {
             <input type="text" name="youtube_intro_url" value="<?php echo htmlspecialchars($settings['youtube_intro_url'] ?? ''); ?>" class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-school-pink outline-none">
         </div>
 
+        <!-- แถบเชื่อมโยง Google Apps Script (GAS) เพื่อส่งไฟล์เข้า Google Drive -->
+        <div class="sm:col-span-2 border-t border-slate-100 pt-6 mt-4 space-y-4">
+            <div class="bg-blue-50/50 border border-blue-100 rounded-3xl p-5 sm:p-6 space-y-4">
+                <div class="flex items-center gap-2 border-b border-blue-100/60 pb-3">
+                    <span class="p-2 bg-blue-100 text-blue-600 rounded-xl leading-none font-sans text-sm">☁️</span>
+                    <div>
+                        <h4 class="font-heading font-black text-xs sm:text-xs text-slate-800 leading-tight">เชื่อมต่อคลาวด์อัปโหลดเก็บไฟล์บน Google Drive (แก้ปัญหาอัปโหลดฟิลด์จำกัด)</h4>
+                        <p class="text-[9px] text-slate-400 font-medium">เปิดทำงานในกรณีที่โฮสติ้งเซิร์ฟเวอร์จำกัดขนาดอัปโหลดรูปภาพ สื่อประกอบ หรือรายงานไฟล์ต่างๆ</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-slate-700 font-bold text-xs">🔗 Google Apps Script Web App URL ของโรงเรียน</label>
+                    <input type="url" name="google_apps_script_url" value="<?php echo htmlspecialchars($settings['google_apps_script_url'] ?? ''); ?>" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white rounded-xl border border-blue-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-blue-400 outline-none">
+                    <p class="text-[9px] text-slate-500 font-medium">💡 ปล่อยว่างไว้หากต้องการสลับกลับไปใช้อัปโหลดเก็บเข้าโฟลเดอร์เซิร์ฟเวอร์โลคอลตามปกติ</p>
+                </div>
+
+                <div class="space-y-2 pt-1">
+                    <span class="block text-slate-700 font-bold text-[10px] sm:text-xs">📋 รหัสสคริปต์ Google Apps Script (GAS) สำหรับนำไปใช้สร้างโฟลเดอร์:</span >
+                    <p class="text-[10px] text-slate-500 bg-white/60 p-3 rounded-xl border border-blue-100/40 leading-relaxed font-normal">
+                        <strong>แนะนำการตั้งค่าแบบ 1 นาที:</strong><br>
+                        1. ไปที่ <a href="https://script.google.com" target="_blank" class="text-blue-600 underline hover:text-blue-700">Google Apps Script (คลิกเปิด)</a> ด้วยบัญชีจีเมลโรงเรียน<br>
+                        2. คลิกปุ่ม <strong>โครงการใหม่ (New Project)</strong> แล้วนำรหัสสคริปต์ด้านล่างนี้วางแทนที่รหัสเริ่มต้นทั้งหมด<br>
+                        3. คลิกปุ่ม <strong>การทำให้ใช้งานได้ (Deploy)</strong> &gt; <strong>การใช้งานใหม่ (New Deployment)</strong><br>
+                        4. เลือกฟันเฟืองประเภทเป็น <strong>เว็บแอป (Web App)</strong><br>
+                        5. ตั้งค่าช่อง ผู้มีสิทธิ์เข้าถึง (Who has access) ให้เลือกเป็น <strong>"ทุกคน" (Anyone)</strong> และผู้ดำเนินการเว็บแอปเป็น <strong>"ฉัน" (Me)</strong> จากนั้นกด Deploy<br>
+                        6. คัดลอกลิงก์ Web App URL ที่ได้ นำมาแปะลงในช่องด้านบนนี้แล้วกดบันทึกโรงเรียน
+                    </p>
+                    
+                    <div class="relative">
+                        <textarea readonly id="gas_code_box" rows="8" class="w-full bg-slate-900 text-teal-400 font-mono p-4 rounded-xl text-[10px] outline-none border border-slate-800 leading-relaxed cursor-text select-all" onclick="this.select();" placeholder="คลิกเพื่อคัดลอกรูปสคริปต์ทั้งหมด..."><?php echo htmlspecialchars('function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var filename = data.filename;
+    var mimeType = data.mimeType;
+    var base64Data = data.base64;
+    
+    var decoded = Utilities.base64Decode(base64Data);
+    var blob = Utilities.newBlob(decoded, mimeType, filename);
+    
+    // ตั้งพาร์ทชื่อโฟลเดอร์แชร์เก็บไฟล์บน Drive ของโรงเรียน
+    var folderName = "โรงเรียนบ้านหนองหว้า_Uploads";
+    var folder;
+    var folders = DriveApp.getFoldersByName(folderName);
+    
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+    }
+    
+    // ปลดล็อกแชร์สิทธิ์แบบสมบูรณ์ให้ทุกคนอ่านภาพและแสดงผลได้
+    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    var fileId = file.getId();
+    
+    // ใช้สัญญานระนาบ direct-link ของ Google ในการเรนเดอร์ภาพเข้า tag img แน่นหนา ไม่หลุด
+    var displayUrl = "";
+    var isImage = mimeType.indexOf("image/") !== -1;
+    
+    if (isImage) {
+      displayUrl = "https://lh3.googleusercontent.com/d/" + fileId;
+    } else {
+      displayUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      url: displayUrl,
+      fileId: fileId
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}'); ?></textarea>
+                        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('gas_code_box').value); alert('คัดลอกรหัสสคริปต์ GAS เรียบร้อยแล้ว!');" class="absolute bottom-3 right-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-[9px] transition">
+                            📋 คลิกคัดลอกโค้ด
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ส่วนสื่ออัปโหลดกราฟิก ตรา และ แบนเนอร์ -->
         <div class="sm:col-span-2 border-t border-slate-100 pt-6 mt-2 space-y-4">
             <h4 class="font-heading font-black text-sm text-slate-800 flex items-center justify-between gap-1.5 flex-wrap">

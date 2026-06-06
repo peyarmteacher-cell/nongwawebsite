@@ -58,7 +58,7 @@ function getUploadErrorMessage($errorCode) {
  * แยกไฟล์รูปภาพเข้า uploads/images | ไฟล์ PDF เข้า uploads/pdfs | ไฟล์เอกสารอื่นๆ เข้า uploads/documents
  */
 function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip') {
-    global $global_last_upload_error;
+    global $global_last_upload_error, $pdo;
     $global_last_upload_error = '';
 
     if (!isset($file)) {
@@ -77,6 +77,83 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
     if (!in_array($ext, $allowed)) {
         $global_last_upload_error = "ไม่รับรองไฟล์สกุล '." . $ext . "' (ช่องทางนี้รองรับเฉพาะ: " . implode(', ', $allowed) . ")";
         return false;
+    }
+
+    // เจาะลึกดึงค่า Google Apps Script Web App URL จากฐานข้อมูล เพื่อนำพาการอัพโหลดขึ้น Google Drive
+    $gas_url = '';
+    try {
+        if (isset($pdo)) {
+            $gas_stmt = $pdo->query("SELECT `google_apps_script_url` FROM `settings` WHERE `id` = 1");
+            if ($gas_stmt) {
+                $gas_row = $gas_stmt->fetch();
+                $gas_url = !empty($gas_row['google_apps_script_url']) ? trim($gas_row['google_apps_script_url']) : '';
+            }
+        }
+    } catch (Exception $db_err) {
+        $gas_url = '';
+    }
+
+    // กรณีตรวจพบ URL ของ Google Apps Script Web App ให้ทำการส่งไฟล์ภาพไปเก็บที่ Google Drive ของผู้ใช้โดยตรง
+    if (!empty($gas_url) && filter_var($gas_url, FILTER_VALIDATE_URL)) {
+        $file_content = @file_get_contents($file['tmp_name']);
+        if ($file_content !== false) {
+            $base64_data = base64_encode($file_content);
+            
+            // หาประเภท Mime Type สากล
+            $mime_type = 'application/octet-stream';
+            if (function_exists('mime_content_type')) {
+                $mime_type = @mime_content_type($file['tmp_name']);
+            }
+            if (!$mime_type || $mime_type === 'application/octet-stream') {
+                $mtypes = [
+                    'png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'gif' => 'image/gif',
+                    'pdf' => 'application/pdf', 'doc' => 'application/msword', 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'xls' => 'application/vnd.ms-excel', 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'zip' => 'application/zip'
+                ];
+                if (isset($mtypes[$ext])) {
+                    $mime_type = $mtypes[$ext];
+                }
+            }
+
+            // จัดทำ Payload สำหรับส่งไปยัง Google Apps Script Web App
+            $payload = json_encode([
+                'filename' => $file['name'],
+                'mimeType' => $mime_type,
+                'base64' => $base64_data
+            ]);
+
+            // ส่ง HTTP POST ไปประมวลผลบนเซิร์ฟเวอร์กูเกิลไดรฟ์โดยตรง
+            $ch = curl_init($gas_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($payload)
+            ]);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // เพื่อความชัวร์ในการรองรับ 302 Redirect ของกูเกิลแอพสคริปต์
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // วางระดับคอยเวลาหน่วงอัปโหลด 30 วินาที
+
+            $response = curl_exec($ch);
+            $curl_err = curl_error($ch);
+            curl_close($ch);
+
+            if ($response) {
+                $res_json = json_decode($response, true);
+                if (isset($res_json['status']) && $res_json['status'] === 'success' && !empty($res_json['url'])) {
+                    // ดึงพาร์ท URL ของไฟล์ที่อัปโหลดเข้าสู่ Google Drive สำเร็จ!
+                    return $res_json['url'];
+                } else {
+                    $gas_err_msg = isset($res_json['message']) ? $res_json['message'] : 'ข้อมูลปลายทางระบุมาไม่ถูกต้อง';
+                    $global_last_upload_error = "เชื่อมต่อระบบคลาวด์ Google Drive สำเร็จ แต่ GAS พ่นข้อผิดพลาดกลับมา: " . $gas_err_msg . " (ระบบสลับมาอัปโหลดพาร์ทโลคอลสำรองแล้ว)";
+                }
+            } else {
+                $global_last_upload_error = "การจัดส่งไฟล์ไปยัง Google Apps Script เกิดปัญหาเชื่อมต่อล้มเหลว: " . $curl_err . " (ระบบสลับมาอัปโหลดพาร์ทโลคอลสำรองแล้ว)";
+            }
+        } else {
+            $global_last_upload_error = "ไม่สามารถเปิดอ่านเนื้อหาไฟล์ชั่วคราวบนเซิร์ฟเวอร์ระบบได้ (ระบบสลับมาอัปโหลดพาร์ทโลคอลสำรองแล้ว)";
+        }
     }
 
     // จัดแยกประเภทโฟลเดอร์ตามความประสงค์ของผู้ใช้เพื่อความเป็นระเบียบระนาบ
@@ -141,6 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
     $banner_subtitle = cleanInput($_POST['banner_subtitle'] ?? '');
     $director_message_title = cleanInput($_POST['director_message_title'] ?? '');
     $director_message = cleanInput($_POST['director_message'] ?? '');
+    $google_apps_script_url = cleanInput($_POST['google_apps_script_url'] ?? '');
 
     try {
         $existing_stmt = $pdo->query("SELECT school_logo, banner_bg_image, banner_right_image FROM `settings` WHERE `id` = 1");
@@ -220,7 +298,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             `banner_title` = :banner_title,
             `banner_subtitle` = :banner_subtitle,
             `director_message_title` = :director_message_title,
-            `director_message` = :director_message
+            `director_message` = :director_message,
+            `google_apps_script_url` = :google_apps_script_url
             WHERE `id` = 1");
         
         $stmt->execute([
@@ -242,7 +321,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             'banner_title' => $banner_title,
             'banner_subtitle' => $banner_subtitle,
             'director_message_title' => $director_message_title,
-            'director_message' => $director_message
+            'director_message' => $director_message,
+            'google_apps_script_url' => $google_apps_script_url
         ]);
 
         $success_alert = 'อัปเดตข้อมูลทั่วไปของสถานศึกษาโรงเรียนบ้านหนองหว้าเรียบร้อยแล้ว!';
