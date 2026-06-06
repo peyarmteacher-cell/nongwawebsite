@@ -105,21 +105,39 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
         return false;
     }
 
-    // เจาะลึกดึงค่า Google Apps Script Web App URL และ Google Drive Folder ID จากฐานข้อมูล เพื่อนำพาการอัพโหลดขึ้น Google Drive
+    // เจาะลึกดึงค่า Google Apps Script Web App URL และ Google Drive Folder ID จาก POST / GET หรือฐานข้อมูล เพื่อนำพาการอัพโหลดขึ้น Google Drive
     $gas_url = '';
     $gas_folder_id = '';
-    try {
-        if (isset($pdo)) {
-            $gas_stmt = $pdo->query("SELECT `google_apps_script_url`, `google_drive_folder_id` FROM `settings` WHERE `id` = 1");
-            if ($gas_stmt) {
-                $gas_row = $gas_stmt->fetch();
-                $gas_url = !empty($gas_row['google_apps_script_url']) ? trim($gas_row['google_apps_script_url']) : '';
-                $gas_folder_id = !empty($gas_row['google_drive_folder_id']) ? trim($gas_row['google_drive_folder_id']) : '';
+
+    // ดึงข้อมูลแบบเรียลไทม์จาก POST/GET ก่อนเพื่อรองรับกรณีการทดลองตั้งค่าบนแผงควบคุมที่ยังไม่ได้บันทึกลงตารางจริง
+    if (!empty($_POST['google_apps_script_url'])) {
+        $gas_url = trim($_POST['google_apps_script_url']);
+    } elseif (!empty($_GET['google_apps_script_url'])) {
+        $gas_url = trim($_GET['google_apps_script_url']);
+    }
+
+    if (!empty($_POST['google_drive_folder_id'])) {
+        $gas_folder_id = trim($_POST['google_drive_folder_id']);
+    } elseif (!empty($_GET['google_drive_folder_id'])) {
+        $gas_folder_id = trim($_GET['google_drive_folder_id']);
+    }
+
+    if (empty($gas_url)) {
+        try {
+            if (isset($pdo)) {
+                $gas_stmt = $pdo->query("SELECT `google_apps_script_url`, `google_drive_folder_id` FROM `settings` WHERE `id` = 1");
+                if ($gas_stmt) {
+                    $gas_row = $gas_stmt->fetch();
+                    $gas_url = !empty($gas_row['google_apps_script_url']) ? trim($gas_row['google_apps_script_url']) : '';
+                    if (empty($gas_folder_id)) {
+                        $gas_folder_id = !empty($gas_row['google_drive_folder_id']) ? trim($gas_row['google_drive_folder_id']) : '';
+                    }
+                }
             }
+        } catch (Exception $db_err) {
+            $gas_url = '';
+            $gas_folder_id = '';
         }
-    } catch (Exception $db_err) {
-        $gas_url = '';
-        $gas_folder_id = '';
     }
 
     // กรณีตรวจพบ URL ของ Google Apps Script Web App ให้ทำการส่งไฟล์ภาพไปเก็บที่ Google Drive ของผู้ใช้โดยตรง
@@ -152,32 +170,80 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
                 'folderId' => $gas_folder_id
             ]);
 
-            // ส่ง HTTP POST ไปประมวลผลบนเซิร์ฟเวอร์กูเกิลไดรฟ์โดยตรง
-            $ch = curl_init($gas_url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($payload)
-            ]);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // เพื่อความชัวร์ในการรองรับ 302 Redirect ของกูเกิลแอพสคริปต์
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // วางระดับคอยเวลาหน่วงอัปโหลด 30 วินาที
+            // ส่ง HTTP POST ไปประมวลผลบนเซิร์ฟเวอร์กูเกิลไดรฟ์โดยตรงด้วยความเสถียรสูงสุด (Manual redirection handling to bypass open_basedir)
+            $current_url = $gas_url;
+            $max_redirects = 5;
+            $response_body = '';
+            $upload_success = false;
+            $curl_err = '';
 
-            $response = curl_exec($ch);
-            $curl_err = curl_error($ch);
-            curl_close($ch);
-
-            if ($response) {
-                $res_json = json_decode($response, true);
-                if (isset($res_json['status']) && $res_json['status'] === 'success' && !empty($res_json['url'])) {
-                    // ดึงพาร์ท URL ของไฟล์ที่อัปโหลดเข้าสู่ Google Drive สำเร็จ!
-                    return $res_json['url'];
+            for ($i = 0; $i < $max_redirects; $i++) {
+                $ch = curl_init($current_url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                
+                // คำขอแรกส่งแบบ POST พร้อม Payload / คำขอเปลี่ยนทางส่งแบบ GET ธรรมดา
+                if ($i === 0) {
+                    curl_setopt($ch, CURLOPT_POST, true);
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                        'Content-Type: application/json',
+                        'Content-Length: ' . strlen($payload)
+                    ]);
                 } else {
-                    $gas_err_msg = isset($res_json['message']) ? $res_json['message'] : 'ข้อมูลปลายทางระบุมาไม่ถูกต้อง';
-                    $global_last_upload_error = "เชื่อมต่อระบบคลาวด์ Google Drive สำเร็จ แต่ GAS พ่นข้อผิดพลาดกลับมา: " . $gas_err_msg . " (ระบบสลับมาอัปโหลดพาร์ทโลคอลสำรองแล้ว)";
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                        'Accept: application/json'
+                    ]);
+                }
+                
+                curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+                curl_setopt($ch, CURLOPT_HEADER, true); // ปลดเปิดอ่าน Headers เพื่อดักหน้าผันแปร Location
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 40); // เพิ่มเวลาเป็น 40 วินาที
+
+                $response = curl_exec($ch);
+                $info = curl_getinfo($ch);
+                $curl_err = curl_error($ch);
+                curl_close($ch);
+
+                if ($response === false) {
+                    break;
+                }
+
+                $header_size = $info['header_size'];
+                $header = substr($response, 0, $header_size);
+                $body = substr($response, $header_size);
+                $http_code = $info['http_code'];
+
+                // ตรวจรหัสคำชี้แนะการเปลี่ยนเส้นทาง 301/302 Redirect
+                if (($http_code == 301 || $http_code == 302 || $http_code == 307 || $http_code == 308) && preg_match('/Location:\s*(.*)/i', $header, $matches)) {
+                    $current_url = trim($matches[1]);
+                    continue; // ขยายขั้นตอนรังวัดการสลับลิงก์แอปสคริปต์ขั้นถัดไป
+                }
+
+                $response_body = $body;
+                $upload_success = true;
+                break;
+            }
+
+            if ($upload_success) {
+                $clean_body = trim($response_body);
+                // ดึงเฉพาะสตริงในขอบเขตวงเล็บปีกกา { ... } ป้องกันอักขระแปลกปลอมรบกวนการถอดรหัส JSON
+                $start_pos = strpos($clean_body, '{');
+                $end_pos = strrpos($clean_body, '}');
+                $res_json = null;
+                if ($start_pos !== false && $end_pos !== false && $end_pos > $start_pos) {
+                    $json_substr = substr($clean_body, $start_pos, $end_pos - $start_pos + 1);
+                    $res_json = json_decode($json_substr, true);
+                } else {
+                    $res_json = json_decode($clean_body, true);
+                }
+
+                if (isset($res_json['status']) && $res_json['status'] === 'success' && !empty($res_json['url'])) {
+                    // ดึงพาร์ท URL ของไฟล์ที่อัปโหลดเข้าสู่ Google Drive สำเร็จรูปและแปลงทันที!
+                    return fixGoogleDriveUrl($res_json['url']);
+                } else {
+                    $gas_err_msg = isset($res_json['message']) ? $res_json['message'] : 'สคริปต์สแกนตอบกลับไม่สมบูรณ์: ' . strip_tags($clean_body);
+                    $global_last_upload_error = "สตรีมคลาวด์ได้รับผลตอบรับไม่สมบูรณ์: " . $gas_err_msg . " (ระบบสลับมาอัปโหลดพาร์ทโลคอลสำรองแล้ว)";
                 }
             } else {
                 $global_last_upload_error = "การจัดส่งไฟล์ไปยัง Google Apps Script เกิดปัญหาเชื่อมต่อล้มเหลว: " . $curl_err . " (ระบบสลับมาอัปโหลดพาร์ทโลคอลสำรองแล้ว)";
@@ -1081,6 +1147,16 @@ $settings = $settingsStmt->fetch();
                 const formData = new FormData();
                 formData.append('file', selectedFile);
 
+                // ดึงค่า URL ของคลาสกรองและ ID โฟลเดอร์ที่ผู้ใช้อาจเขียนหรือแก้ไขไว้บนหน้าจอแบบเรียลไทม์
+                const gasUrlField = document.querySelector('input[name="google_apps_script_url"]');
+                const folderIdField = document.querySelector('input[name="google_drive_folder_id"]');
+                if (gasUrlField && gasUrlField.value.trim() !== '') {
+                    formData.append('google_apps_script_url', gasUrlField.value.trim());
+                }
+                if (folderIdField && folderIdField.value.trim() !== '') {
+                    formData.append('google_drive_folder_id', folderIdField.value.trim());
+                }
+
                 let allowedStr = "jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip";
                 if (fileInput.accept) {
                     if (fileInput.accept.includes('image')) allowedStr = "jpg,jpeg,png,gif";
@@ -1098,6 +1174,19 @@ $settings = $settingsStmt->fetch();
                         // อัปเดตช่องข้อความรับพาร์ท URL อัตโนมัติ
                         urlInput.value = data.url;
                         urlInput.dispatchEvent(new Event('change'));
+
+                        // ระบบช่วยกรอกขนาดและนามสกุลสำหรับแฟ้มเอกสารดาวน์โหลดอัตโนมัติ
+                        const form = fileInput.closest('form');
+                        if (form) {
+                            const sizeInput = form.querySelector('input[name="doc_size"]');
+                            const typeInput = form.querySelector('input[name="doc_type"]');
+                            if (sizeInput && (!sizeInput.value || sizeInput.value === '1.2 MB' || sizeInput.value === '#' || sizeInput.value === '')) {
+                                sizeInput.value = formatBytes(selectedFile.size);
+                            }
+                            if (typeInput && (!typeInput.value || typeInput.value === '#' || typeInput.value === '')) {
+                                typeInput.value = selectedFile.name.split('.').pop().toUpperCase();
+                            }
+                        }
 
                         // ล้างไฟล์ออกจาก selector เพื่อไม่ให้เบราว์เซอร์ไปเซฟซ้ำซ้อนพังลงตารางโลคอล
                         fileInput.value = ''; 
