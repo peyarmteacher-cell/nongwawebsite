@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Ban Nong Wa School Website",
+  "description": "Premium multi-module school website and developer assets for Ban Nong Wa School (โรงเรียนบ้านหนองหว้า) with AI capabilities, database dashboard, and PHP/MySQL codebase exporter.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
