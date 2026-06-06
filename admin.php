@@ -319,12 +319,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
     $google_drive_folder_id = cleanInput($_POST['google_drive_folder_id'] ?? '');
 
     try {
-        $existing_stmt = $pdo->query("SELECT school_logo, banner_bg_image, banner_right_image FROM `settings` WHERE `id` = 1");
+        $existing_stmt = $pdo->query("SELECT school_logo, banner_bg_image, banner_right_image, director_image FROM `settings` WHERE `id` = 1");
         $existing_sets = $existing_stmt->fetch();
         
         $school_logo = $existing_sets['school_logo'] ?? '';
         $banner_bg_image = $existing_sets['banner_bg_image'] ?? '';
         $banner_right_image = $existing_sets['banner_right_image'] ?? '';
+        $director_image = $existing_sets['director_image'] ?? '';
         
         $upload_warnings = [];
 
@@ -375,6 +376,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             }
         } else {
             $banner_right_image = !empty($_POST['banner_right_url']) ? cleanInput($_POST['banner_right_url']) : $banner_right_image;
+        }
+
+        // 4. ภาพถ่ายผู้อำนวยการโรงเรียน (ตัวเพิ่มใหม่สนับสนุนอธิการบดี)
+        if (isset($_FILES['director_image_file']) && $_FILES['director_image_file']['name'] !== '') {
+            if ($_FILES['director_image_file']['error'] === 0) { // UPLOAD_ERR_OK
+                $uploaded_dir_img = uploadFileToServer($_FILES['director_image_file'], 'jpg,jpeg,png,gif');
+                if ($uploaded_dir_img) {
+                    $director_image = $uploaded_dir_img;
+                } else {
+                    $upload_warnings[] = "ภาพผู้อำนวยการโรงเรียน (เกิดข้อผิดพลาด: " . $global_last_upload_error . ")";
+                }
+            } else {
+                $upload_warnings[] = "ภาพผู้อำนวยการโรงเรียน (ระบบอัปโหลดขัดข้อง: " . getUploadErrorMessage($_FILES['director_image_file']['error']) . ")";
+            }
+        } else {
+            $director_image = !empty($_POST['director_image']) ? cleanInput($_POST['director_image']) : $director_image;
         }
 
         $stmt = $pdo->prepare("UPDATE `settings` SET 
@@ -1043,6 +1060,7 @@ $settings = $settingsStmt->fetch();
             'school_logo_file': ['school_logo_url', 'school_logo'],
             'banner_bg_file': ['banner_bg_url', 'banner_bg_image'],
             'banner_right_file': ['banner_right_url', 'banner_right_image'],
+            'director_image_file': ['director_image'],
             'link_image_file': ['link_image_url'],
             'teacher_image_file': ['teacher_image'],
             'teacher_pa_file': ['teacher_pa_url'],

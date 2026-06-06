@@ -96,9 +96,22 @@ if (!defined('DB_HOST')) {
             <input type="text" name="director_title" required value="<?php echo htmlspecialchars($settings['director_title'] ?? ''); ?>" class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-school-pink outline-none">
         </div>
 
-        <div class="space-y-1 sm:col-span-2">
-            <label class="block">ลิงก์ภาพถ่ายผู้อำนวยการโรงเรียน (URL)</label>
-            <input type="text" name="director_image" value="<?php echo htmlspecialchars($settings['director_image'] ?? ''); ?>" class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-school-pink outline-none">
+        <div class="space-y-2 sm:col-span-2 bg-pink-50/10 border border-pink-100/60 rounded-2xl p-4">
+            <label class="block text-slate-700 font-bold text-xs">👤 ภาพถ่ายผู้อำนวยการโรงเรียน</label>
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <?php if (!empty($settings['director_image'])): ?>
+                    <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($settings['director_image'])); ?>" class="w-20 h-24 object-cover bg-white p-1 rounded-xl shadow-sm border border-pink-100 shrink-0" referrerPolicy="no-referrer">
+                <?php else: ?>
+                    <div class="w-20 h-24 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 text-xs shrink-0 border border-slate-200">
+                        ไม่มีภาพ
+                    </div>
+                <?php endif; ?>
+                <div class="space-y-2 w-full">
+                    <input type="file" name="director_image_file" accept="image/*" class="w-full text-[10px] text-slate-550 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-pink-50 file:text-school-pink hover:file:bg-pink-100">
+                    <p class="text-[9px] text-slate-400 font-medium">รองรับ JPG, PNG, GIF (สูงสุด <?php echo ini_get('upload_max_filesize'); ?>) แนะนำประมวลผลผ่านตัวช่วยลดขนาดอัตโนมัติด้านล่างในการประหยัดขนาดรูปกิจกรรมความละเอียดสูง</p>
+                    <input type="text" name="director_image" value="<?php echo htmlspecialchars($settings['director_image'] ?? ''); ?>" placeholder="หรือระบุเป็น URL ภาพตรงผู้อำนวยการ..." class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-school-pink outline-none">
+                </div>
+            </div>
         </div>
 
         <div class="space-y-1 sm:col-span-2">
