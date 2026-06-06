@@ -233,7 +233,7 @@ foreach ($students_list as $std) {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <a href="index.php" class="flex items-center gap-3 group">
                 <?php if (!empty($settings['school_logo'])): ?>
-                    <img id="school_logo_main" src="<?php echo htmlspecialchars($settings['school_logo']); ?>" alt="School Logo" class="h-12 w-12 object-contain rounded-full shadow-md group-hover:scale-105 transition-all" referrerPolicy="no-referrer">
+                    <img id="school_logo_main" src="<?php echo htmlspecialchars(fixGoogleDriveUrl($settings['school_logo'])); ?>" alt="School Logo" class="h-12 w-12 object-contain rounded-full shadow-md group-hover:scale-105 transition-all" referrerPolicy="no-referrer">
                 <?php else: ?>
                     <div id="school_logo_placeholder" class="h-12 w-12 rounded-full bg-gradient-to-tr from-school-pink to-pink-300 flex items-center justify-center text-white font-black text-xl shadow-md group-hover:scale-105 transition-all">
                         นห
@@ -276,7 +276,7 @@ foreach ($students_list as $std) {
     <section class="relative bg-slate-950 overflow-hidden min-h-[500px] flex items-center py-12 md:py-20 border-b border-pink-500/10">
         <!-- ภาพพื้นหลังแบนเนอร์ (ฝั่งขวา) ปิดปัญหาขอบแกร่งด้วยการทำเกรเดียนต์ปิดจุดตัดเพื่อให้สีกลมกลืน -->
         <div class="absolute inset-y-0 right-0 w-full lg:w-1/2 z-0">
-            <img src="<?php echo htmlspecialchars($banner_bg); ?>" alt="Banner Background" class="w-full h-full object-cover opacity-35 lg:opacity-60 filter brightness-90 contrast-105" referrerPolicy="no-referrer">
+            <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_bg)); ?>" alt="Banner Background" class="w-full h-full object-cover opacity-35 lg:opacity-60 filter brightness-90 contrast-105" referrerPolicy="no-referrer">
             <!-- ไล่ระดับสีคู่ตรงข้าม จากสีดำเข้มฝั่งซ้ายเฟดมารองรับภาพทางฝั่งขวา -->
             <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent pointer-events-none"></div>
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none lg:hidden"></div>
@@ -313,7 +313,7 @@ foreach ($students_list as $std) {
             <!-- ฝั่งขวา: แบนเนอร์ไฮไลท์ตกแต่ง (Banner Right Highlight) ย้ายมาอยู่ฝั่งขวาคู่กับเบลนดิ้งภาพพื้นหลังสวยงาม -->
             <div class="w-full lg:w-5/12 flex justify-center lg:justify-end relative z-20 animate-fade-in order-2 lg:order-2">
                 <div class="relative p-2.5 rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl hover:scale-[1.03] hover:rotate-1 transition-all duration-300 max-w-sm w-full">
-                    <img id="banner_right_img" src="<?php echo htmlspecialchars($banner_right); ?>" alt="Banner Right Highlight" class="w-full h-72 object-cover rounded-2.5xl shadow-inner border border-white/10" referrerPolicy="no-referrer">
+                    <img id="banner_right_img" src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_right)); ?>" alt="Banner Right Highlight" class="w-full h-72 object-cover rounded-2.5xl shadow-inner border border-white/10" referrerPolicy="no-referrer">
                     <div class="absolute -bottom-3 -right-3 bg-gradient-to-r from-school-pink to-pink-500 font-bold text-[11px] uppercase text-white px-4 py-1.5 rounded-full shadow-lg border border-pink-400">
                         ตราแบนเนอร์ ชมพู-ขาว
                     </div>
@@ -375,7 +375,7 @@ foreach ($students_list as $std) {
         <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center bg-white rounded-3xl p-8 shadow-sm border border-pink-100/50">
             <div class="md:col-span-4 flex flex-col items-center">
                 <div class="w-48 h-48 rounded-full overflow-hidden border-4 border-school-pink shadow-lg">
-                    <img src="<?php echo htmlspecialchars($settings['director_image']); ?>" alt="ภาพผู้อำนวยการ" class="w-full h-full object-cover">
+                    <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($settings['director_image'])); ?>" alt="ภาพผู้อำนวยการ" class="w-full h-full object-cover" referrerPolicy="no-referrer">
                 </div>
                 <h4 class="font-heading font-bold text-lg text-slate-800 mt-4 leading-none"><?php echo htmlspecialchars($settings['director_name']); ?></h4>
                 <p class="text-xs text-school-pink font-bold uppercase tracking-wider mt-1"><?php echo htmlspecialchars($settings['director_title']); ?></p>
@@ -437,7 +437,7 @@ foreach ($students_list as $std) {
                                         ข่าวสำคัญปักหมุด
                                     </span>
                                 <?php endif; ?>
-                                <img src="<?php echo htmlspecialchars($news['image_url'] ?? 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=600'); ?>" alt="ข่าวโรงเรียน" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($news['image_url'] ?? 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=600')); ?>" alt="ข่าวโรงเรียน" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" referrerPolicy="no-referrer">
                             </div>
                             <div class="p-5 flex-1 flex flex-col justify-between">
                                 <div class="space-y-2">
@@ -490,7 +490,7 @@ foreach ($students_list as $std) {
                     <div class="bg-white rounded-2xl p-4 border border-pink-50 relative overflow-hidden group hover:shadow-md transition duration-200 flex flex-col items-center text-center">
                         <div class="absolute top-0 left-0 w-full h-1.5 bg-school-pink"></div>
                         <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-pink-100 shadow-inner mb-4">
-                            <img src="<?php echo htmlspecialchars($teacher['image_url'] ?? 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=300'); ?>" alt="บุคลากรครู" class="w-full h-full object-cover group-hover:scale-105 transition-all">
+                            <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($teacher['image_url'] ?? 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=300')); ?>" alt="บุคลากรครู" class="w-full h-full object-cover group-hover:scale-105 transition-all" referrerPolicy="no-referrer">
                         </div>
                         <h5 class="text-xs font-bold text-slate-900 leading-tight mb-1">
                             <?php echo htmlspecialchars($teacher['name']); ?>
@@ -632,7 +632,7 @@ foreach ($students_list as $std) {
                     <?php foreach ($external_links_list as $link): ?>
                         <a href="<?php echo htmlspecialchars($link['url_link'] ?? $link['url'] ?? '#'); ?>" target="_blank" class="bg-white rounded-2xl p-5 border border-pink-50/50 shadow-sm hover:shadow-md hover:border-school-pink/20 transition-all flex gap-4 group">
                             <div class="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-slate-100 shadow-sm">
-                                <img src="<?php echo htmlspecialchars($link['image_url'] ?? 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=200'); ?>" alt="<?php echo htmlspecialchars($link['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" referrerPolicy="no-referrer">
+                                <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($link['image_url'] ?? 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=200')); ?>" alt="<?php echo htmlspecialchars($link['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" referrerPolicy="no-referrer">
                             </div>
                             <div class="space-y-1 select-none">
                                 <span class="inline-block bg-pink-50 text-school-pink text-[9px] font-black px-2 py-0.5 rounded uppercase">
@@ -718,7 +718,7 @@ foreach ($students_list as $std) {
             <div class="space-y-4">
                 <div class="flex items-center gap-2">
                     <?php if (!empty($settings['school_logo'])): ?>
-                        <img src="<?php echo htmlspecialchars($settings['school_logo']); ?>" alt="School Footer Logo" class="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow referrerPolicy="no-referrer">
+                        <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($settings['school_logo'])); ?>" alt="School Footer Logo" class="h-10 w-10 object-contain rounded-full bg-white p-0.5 shadow" referrerPolicy="no-referrer">
                     <?php else: ?>
                         <div class="h-10 w-10 rounded-full bg-white flex items-center justify-center text-school-pink font-black text-sm">
                             นห

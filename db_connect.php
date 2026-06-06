@@ -78,6 +78,33 @@ function cleanInput($data) {
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * แปลงลิงก์ Google Drive แฟ้มดูข้อมูลทั่วไปให้เป็น Direct Image/Download Link รองรับทุกอุปกรณ์แท็ก img และปุ่มดาวน์โหลดอย่างเสถียร
+ */
+function fixGoogleDriveUrl($url) {
+    if (empty($url)) return $url;
+    
+    // แบบที่ 1: drive.google.com/file/d/FILE_ID/view...
+    if (preg_match('/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i', $url, $matches)) {
+        return "https://lh3.googleusercontent.com/d/" . $matches[1];
+    }
+    
+    // แบบที่ 2: drive.google.com/open?id=FILE_ID...
+    if (preg_match('/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/i', $url, $matches)) {
+        return "https://lh3.googleusercontent.com/d/" . $matches[1];
+    }
+
+    // แบบที่ 3: drive.google.com/uc?export=download&id=FILE_ID หรือ docs.google.com/...
+    if (preg_match('/(drive|docs)\.google\.com\/uc\?export=([a-zA-Z0-9_-]+)&id=([a-zA-Z0-9_-]+)/i', $url, $matches)) {
+        return "https://lh3.googleusercontent.com/d/" . $matches[3];
+    }
+    if (preg_match('/(drive|docs)\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/i', $url, $matches)) {
+        return "https://lh3.googleusercontent.com/d/" . $matches[2];
+    }
+    
+    return $url;
+}
+
 // 5. ฟังก์ชันจัดรูปแบบเวลาภาษาไทยแบบย่อ
 function thaiDate($dateStr) {
     if (!$dateStr) return '';

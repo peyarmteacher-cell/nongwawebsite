@@ -20,6 +20,32 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit;
 }
 
+// 2.5 บล็อกจัดการ AJAX อัปโหลดไฟล์ด่วน (Instant Web App AJAX Uploader)
+if (isset($_GET['action']) && $_GET['action'] === 'ajax_upload') {
+    header('Content-Type: application/json; charset=utf-8');
+    if (!isset($_FILES['file'])) {
+        echo json_encode(['status' => 'error', 'message' => 'ไม่พบข้อมูลวัตถุไฟล์ถูกส่งมาในระบบ']);
+        exit;
+    }
+    
+    $allowed_param = isset($_GET['allowed']) ? trim($_GET['allowed']) : 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip';
+    $file_url = uploadFileToServer($_FILES['file'], $allowed_param);
+    
+    if ($file_url) {
+        echo json_encode([
+            'status' => 'success',
+            'url' => $file_url,
+            'filename' => $_FILES['file']['name']
+        ]);
+    } else {
+        echo json_encode([
+            'status' => 'error',
+            'message' => !empty($global_last_upload_error) ? $global_last_upload_error : 'การทำงานประมวลผลเซิร์ฟเวอร์ล้มเหลว'
+        ]);
+    }
+    exit;
+}
+
 // 3. ตัวแปรสำหรับเก็บรายการแจ้งเตือนสัญกรณ์สำเร็จ / ล้มเหลว
 $success_alert = '';
 $err_alert = '';
@@ -135,6 +161,7 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
                 'Content-Type: application/json',
                 'Content-Length: ' . strlen($payload)
             ]);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // เพื่อความชัวร์ในการรองรับ 302 Redirect ของกูเกิลแอพสคริปต์
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30); // วางระดับคอยเวลาหน่วงอัปโหลด 30 วินาที
@@ -941,6 +968,190 @@ $settings = $settingsStmt->fetch();
     <footer class="bg-slate-900 text-slate-500 text-center py-6 border-t border-slate-800 text-[11px] font-medium leading-loose mt-8">
         <p>© 2026 โรงเรียนบ้านหนองหว้า | แผงส่งเสริมการจัดการสารสนเทศแยกส่วนอัตลักษณ์ชมพูขาว</p>
     </footer>
+
+    <!-- ⚡ ระบบช่วยเชื่อมสายอัปโหลดส่งตรงขึ้น Google Drive / คลาวด์อัตโนมัติ -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. ตารางจับคู่ชื่อฟิลด์ไฟล์ กับชื่อฟิลด์รับค่า URL/พาร์ทปลายทาง
+        const fileToUrlFieldMap = {
+            'school_logo_file': ['school_logo_url', 'school_logo'],
+            'banner_bg_file': ['banner_bg_url', 'banner_bg_image'],
+            'banner_right_file': ['banner_right_url', 'banner_right_image'],
+            'link_image_file': ['link_image_url'],
+            'teacher_image_file': ['teacher_image'],
+            'teacher_pa_file': ['teacher_pa_url'],
+            'teacher_portfolio_file': ['teacher_portfolio_url'],
+            'doc_file': ['doc_url'],
+            'news_image_file': ['news_image']
+        };
+
+        // 2. สแกนหาฟิลด์อินพุตไฟล์ทั้งหมดในหน้านี้
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        
+        fileInputs.forEach(function(fileInput) {
+            const name = fileInput.name;
+            if (!name) return;
+            
+            // ค้นหาฟิลด์ข้อความรับค่า URL ที่เชื่อมโยงอยู่
+            let urlInput = null;
+            let possibleNames = fileToUrlFieldMap[name] || [];
+            
+            // ลองหาจากไอดีหรือชื่อฟิลด์ในฟอร์มเดียวกัน
+            const form = fileInput.closest('form');
+            if (form) {
+                for (let pName of possibleNames) {
+                    urlInput = form.querySelector(`[name="${pName}"]`);
+                    if (urlInput) break;
+                }
+                if (!urlInput) {
+                    // ถ้ายังสแกนหาฟิลด์เฉพาะไม่เจอ ให้ค้นหาตัวเลือกที่ดีที่สุดในหมวดหมู่เดียวกัน
+                    const textFields = form.querySelectorAll('input[type="text"], input[type="url"]');
+                    textFields.forEach(tf => {
+                        if (tf.name && (tf.name.includes('url') || tf.name.includes('image') || tf.name.includes('logo') || tf.name.includes('doc'))) {
+                            urlInput = tf;
+                        }
+                    });
+                }
+            }
+            
+            if (!urlInput) return; // หากไม่ตรวจเจอพิกัดฟิลด์คู่ขนานที่จะจัดเก็บ URL ให้ข้าม
+
+            // 3. ปรับแต่งและสร้างแถบควบคุม UI เพิ่มเติมอย่างแนบเนียน
+            const wrapper = document.createElement('div');
+            wrapper.className = "mt-2.5 p-3.5 bg-blue-50/15 border border-blue-200/50 rounded-2xl space-y-2.5 text-[11px] font-semibold text-slate-700 shadow-sm";
+            
+            const header = document.createElement('div');
+            header.className = "flex items-center justify-between font-bold text-teal-900 gap-1.5";
+            header.innerHTML = `
+                <span class="flex items-center gap-1">☁️ นวัตกรรมตัวช่วยอัปโหลดตรงขึ้นระบบคลาวด์ Google Drive</span>
+                <span class="text-[8px] bg-emerald-500 text-white font-extrabold px-1.5 py-0.5 rounded uppercase">RECOMMENDED</span>
+            `;
+            wrapper.appendChild(header);
+
+            const controlRow = document.createElement('div');
+            controlRow.className = "flex flex-wrap items-center gap-2";
+            
+            const uploadBtn = document.createElement('button');
+            uploadBtn.type = "button";
+            uploadBtn.className = "bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-1.5 px-3 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer";
+            uploadBtn.innerHTML = "⚡ กดส่งไฟล์ขึ้นไดรฟ์ทันที";
+            uploadBtn.disabled = true; 
+            
+            const statusSpan = document.createElement('span');
+            statusSpan.className = "text-[10px] text-slate-400 font-medium";
+            statusSpan.textContent = "📂 ยังไม่ได้เลือกไฟล์ในเครื่องของคุณ";
+
+            controlRow.appendChild(uploadBtn);
+            controlRow.appendChild(statusSpan);
+            wrapper.appendChild(controlRow);
+
+            // กล่องแสดงพรีวิวผลงานทันที
+            const previewContainer = document.createElement('div');
+            previewContainer.className = "preview-box hidden pt-2 border-t border-blue-100/50";
+            wrapper.appendChild(previewContainer);
+
+            // แทรกกล่องควบคุมเข้าไปหลังฟลายโฆษณาเลือกไฟล์เครื่องมือนั้น
+            fileInput.parentNode.insertBefore(wrapper, fileInput.nextSibling);
+
+            // กระตุ้นการตรวจจับไฟล์เมื่อมีการคลิกเลือกเปลี่ยน (file onChange)
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    const selectedFile = fileInput.files[0];
+                    statusSpan.className = "text-[10px] text-indigo-600 font-bold";
+                    statusSpan.textContent = "✔️ ดึงไฟล์พร้อมส่ง: " + selectedFile.name + " (" + formatBytes(selectedFile.size) + ")";
+                    uploadBtn.disabled = false;
+                } else {
+                    statusSpan.className = "text-[10px] text-slate-400 font-semibold";
+                    statusSpan.textContent = "📂 ยังไม่ได้เลือกไฟล์ในเครื่องของคุณ";
+                    uploadBtn.disabled = true;
+                }
+            });
+
+            // ดำเนินการอัปโหลดไฟล์ด่วนแบบ asynchronous
+            uploadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const selectedFile = fileInput.files[0];
+                if (!selectedFile) return;
+
+                uploadBtn.disabled = true;
+                fileInput.disabled = true;
+                statusSpan.className = "text-[10px] text-blue-600 font-bold animate-pulse";
+                statusSpan.innerHTML = `⏳ กำลังอัปโหลดส่งตรงขึ้น Google Drive แฟ้มโรงเรียน...`;
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                let allowedStr = "jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip";
+                if (fileInput.accept) {
+                    if (fileInput.accept.includes('image')) allowedStr = "jpg,jpeg,png,gif";
+                    else if (fileInput.accept.includes('pdf')) allowedStr = "pdf";
+                }
+
+                // สตรีมมิ่งผ่าน AJAX API
+                fetch(`admin.php?action=ajax_upload&allowed=${allowedStr}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // อัปเดตช่องข้อความรับพาร์ท URL อัตโนมัติ
+                        urlInput.value = data.url;
+                        urlInput.dispatchEvent(new Event('change'));
+
+                        // ล้างไฟล์ออกจาก selector เพื่อไม่ให้เบราว์เซอร์ไปเซฟซ้ำซ้อนพังลงตารางโลคอล
+                        fileInput.value = ''; 
+                        
+                        statusSpan.className = "text-[10px] text-emerald-600 font-bold";
+                        statusSpan.innerHTML = `🎉 อัปโหลดขึ้นระบบ Google Drive สำเร็จไร้รอยต่อ!`;
+                        
+                        uploadBtn.disabled = true;
+                        fileInput.disabled = false;
+
+                        // โชว์กล่องพรีวิวเพื่อความสบายใจของผู้ใช้
+                        previewContainer.classList.remove('hidden');
+                        const isImg = data.url.includes('lh3.googleusercontent.com') || data.url.match(/\.(jpeg|jpg|gif|png)/i);
+                        
+                        if (isImg) {
+                            previewContainer.innerHTML = `
+                                <span class="block text-slate-500 font-bold text-[9px] mb-1">👀 ตัวอย่างความละเอียดภาพบน Google Drive:</span>
+                                <div class="relative inline-block mt-1">
+                                    <img src="${data.url}" referrerPolicy="no-referrer" class="max-h-24 max-w-full rounded-xl object-contain border border-emerald-300 shadow-sm p-1 bg-white">
+                                    <span class="absolute bottom-1 right-1 bg-emerald-600 text-[8px] text-white font-extrabold px-1.5 py-0.5 rounded shadow">LIVE ON CLOUD</span>
+                                </div>
+                            `;
+                        } else {
+                            previewContainer.innerHTML = `
+                                <span class="block text-slate-500 font-bold text-[9px] mb-1">👀 ตัวอย่างลิงก์เอกสารอัปโหลด:</span>
+                                <a href="${data.url}" target="_blank" class="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 underline font-bold bg-white p-1.5 rounded-lg border border-slate-100">
+                                    📄 คลิกตรวจดูไฟล์บนไดรฟ์สุนทรียภาพ (${selectedFile.name})
+                                </a>
+                            `;
+                        }
+                    } else {
+                        throw new Error(data.message || 'การแปลงส่งข้อมูลติดขัด');
+                    }
+                })
+                .catch(err => {
+                    statusSpan.className = "text-[10px] text-red-600 font-bold";
+                    statusSpan.innerHTML = `❌ การอัปโหลดติดปัญหา: ` + err.message + ` (สามารถพิมพ์ใส่ URL เองตรงด้านบนได้)`;
+                    uploadBtn.disabled = false;
+                    fileInput.disabled = false;
+                });
+            });
+        });
+
+        // ฟังก์ชันช่วยจัดแจงขนาดหน่วยความจำไบต์คอมพิวเตอร์
+        function formatBytes(bytes, decimals = 2) {
+            if (!+bytes) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+    });
+    </script>
 
 </body>
 </html>
