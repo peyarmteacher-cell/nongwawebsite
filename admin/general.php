@@ -117,47 +117,68 @@ if (!defined('DB_HOST')) {
                     </div>
                 </div>
 
-                <div class="space-y-2">
-                    <label class="block text-slate-700 font-bold text-xs">🔗 Google Apps Script Web App URL ของโรงเรียน</label>
-                    <input type="url" name="google_apps_script_url" value="<?php echo htmlspecialchars($settings['google_apps_script_url'] ?? ''); ?>" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white rounded-xl border border-blue-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-blue-400 outline-none">
-                    <p class="text-[9px] text-slate-500 font-medium">💡 ปล่อยว่างไว้หากต้องการสลับกลับไปใช้อัปโหลดเก็บเข้าโฟลเดอร์เซิร์ฟเวอร์โลคอลตามปกติ</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-slate-700 font-bold text-xs">🔗 Google Apps Script Web App URL ของโรงเรียน</label>
+                        <input type="url" name="google_apps_script_url" value="<?php echo htmlspecialchars($settings['google_apps_script_url'] ?? ''); ?>" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white rounded-xl border border-blue-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-blue-400 outline-none">
+                        <p class="text-[9px] text-slate-500 font-medium">💡 ปล่อยว่างไว้หากต้องการสลับกลับไปใช้อัปโหลดเก็บเข้าโฟลเดอร์เซิร์ฟเวอร์โลคอลตามปกติ</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-slate-700 font-bold text-xs">📁 Google Drive Folder ID (ไอดีโฟลเดอร์ปลายทาง - ตัวเลือกเสริม)</label>
+                        <input type="text" name="google_drive_folder_id" value="<?php echo htmlspecialchars($settings['google_drive_folder_id'] ?? ''); ?>" placeholder="1aBcDeFgHiJkLmNoPqRsTuVwXyZ123456" class="w-full bg-white rounded-xl border border-blue-100 p-2.5 text-xs font-medium focus:ring-1 focus:ring-blue-400 outline-none">
+                        <p class="text-[9px] text-slate-500 font-medium">💡 นำ ID จากกึ่งกลาง URL โฟลเดอร์ใน Google Drive มาใส่ หากเว้นว่างไว้ระบบจะตั้งโฟลเดอร์อัตโนมัติ</p>
+                    </div>
                 </div>
 
                 <div class="space-y-2 pt-1">
-                    <span class="block text-slate-700 font-bold text-[10px] sm:text-xs">📋 รหัสสคริปต์ Google Apps Script (GAS) สำหรับนำไปใช้สร้างโฟลเดอร์:</span >
+                    <span class="block text-slate-700 font-bold text-[10px] sm:text-xs">📋 รหัสสคริปต์ Google Apps Script (GAS) สำหรับนำไปใช้สร้างหรือระบุโฟลเดอร์:</span >
                     <p class="text-[10px] text-slate-500 bg-white/60 p-3 rounded-xl border border-blue-100/40 leading-relaxed font-normal">
-                        <strong>แนะนำการตั้งค่าแบบ 1 นาที:</strong><br>
+                        <strong>แนะนำการตั้งค่าแบบละเอียดและง่าย:</strong><br>
                         1. ไปที่ <a href="https://script.google.com" target="_blank" class="text-blue-600 underline hover:text-blue-700">Google Apps Script (คลิกเปิด)</a> ด้วยบัญชีจีเมลโรงเรียน<br>
-                        2. คลิกปุ่ม <strong>โครงการใหม่ (New Project)</strong> แล้วนำรหัสสคริปต์ด้านล่างนี้วางแทนที่รหัสเริ่มต้นทั้งหมด<br>
+                        2. คลิกปุ่ม <strong>โครงการใหม่ (New Project)</strong> แล้วลบโค้ดเก่าออก จากนั้นนำรหัสสคริปต์ด้านล่างนี้วางทั้งหมดแทนที่<br>
                         3. คลิกปุ่ม <strong>การทำให้ใช้งานได้ (Deploy)</strong> &gt; <strong>การใช้งานใหม่ (New Deployment)</strong><br>
                         4. เลือกฟันเฟืองประเภทเป็น <strong>เว็บแอป (Web App)</strong><br>
-                        5. ตั้งค่าช่อง ผู้มีสิทธิ์เข้าถึง (Who has access) ให้เลือกเป็น <strong>"ทุกคน" (Anyone)</strong> และผู้ดำเนินการเว็บแอปเป็น <strong>"ฉัน" (Me)</strong> จากนั้นกด Deploy<br>
+                        5. ตั้งค่าชื่อคำอธิบาย และกำหนดผู้มีสิทธิ์เข้าถึง (Who has access) ให้เลือกเป็น <strong>"ทุกคน" (Anyone)</strong> และผู้ดำเนินการเว็บแอปเป็น <strong>"ฉัน" (Me)</strong> จากนั้นกด Deploy<br>
                         6. คัดลอกลิงก์ Web App URL ที่ได้ นำมาแปะลงในช่องด้านบนนี้แล้วกดบันทึกโรงเรียน
                     </p>
                     
                     <div class="relative">
-                        <textarea readonly id="gas_code_box" rows="8" class="w-full bg-slate-900 text-teal-400 font-mono p-4 rounded-xl text-[10px] outline-none border border-slate-800 leading-relaxed cursor-text select-all" onclick="this.select();" placeholder="คลิกเพื่อคัดลอกรูปสคริปต์ทั้งหมด..."><?php echo htmlspecialchars('function doPost(e) {
+                        <textarea readonly id="gas_code_box" rows="10" class="w-full bg-slate-900 text-teal-400 font-mono p-4 rounded-xl text-[10px] outline-none border border-slate-800 leading-relaxed cursor-text select-all" onclick="this.select();" placeholder="คลิกเพื่อคัดลอกรูปสคริปต์ทั้งหมด..."><?php echo htmlspecialchars('function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var filename = data.filename;
     var mimeType = data.mimeType;
     var base64Data = data.base64;
+    var folderId = data.folderId; // รับ ID ของโฟลเดอร์ปลายทางจากเว็บแอปโรงเรียน
     
     var decoded = Utilities.base64Decode(base64Data);
     var blob = Utilities.newBlob(decoded, mimeType, filename);
     
-    // ตั้งพาร์ทชื่อโฟลเดอร์แชร์เก็บไฟล์บน Drive ของโรงเรียน
-    var folderName = "โรงเรียนบ้านหนองหว้า_Uploads";
     var folder;
-    var folders = DriveApp.getFoldersByName(folderName);
     
-    if (folders.hasNext()) {
-      folder = folders.next();
-    } else {
-      folder = DriveApp.createFolder(folderName);
+    // 1. ตรวจสอบว่าผู้ใช้คลิกกำหนด Folder ID เฉพาะมาหรือไม่
+    if (folderId && folderId.trim() !== "") {
+      try {
+        folder = DriveApp.getFolderById(folderId.trim());
+      } catch (fErr) {
+        // หากเกิดข้อผิดพลาดในการตรวจสอบไอดี ให้พึ่งพาการสร้าง/ค้นหาด้วยชื่อโฟลเดอร์ต่อไป
+      }
     }
     
-    // ปลดล็อกแชร์สิทธิ์แบบสมบูรณ์ให้ทุกคนอ่านภาพและแสดงผลได้
+    // 2. หากไม่ได้กำหนด Folder ID หรือไม่พบโฟลเดอร์ ให้สลับมาหาสร้างจากชื่อโฟลเดอร์ดั้งเดิม
+    if (!folder) {
+      var folderName = "โรงเรียนบ้านหนองหว้า_Uploads";
+      var folders = DriveApp.getFoldersByName(folderName);
+      
+      if (folders.hasNext()) {
+        folder = folders.next();
+      } else {
+        folder = DriveApp.createFolder(folderName);
+      }
+    }
+    
+    // ปลดล็อกแชร์สิทธิ์แบบสมบูรณ์ให้ทุกคนที่รับภาพเห็นกราฟิก
     folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
     var file = folder.createFile(blob);

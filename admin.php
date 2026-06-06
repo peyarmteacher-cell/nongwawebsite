@@ -79,18 +79,21 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
         return false;
     }
 
-    // เจาะลึกดึงค่า Google Apps Script Web App URL จากฐานข้อมูล เพื่อนำพาการอัพโหลดขึ้น Google Drive
+    // เจาะลึกดึงค่า Google Apps Script Web App URL และ Google Drive Folder ID จากฐานข้อมูล เพื่อนำพาการอัพโหลดขึ้น Google Drive
     $gas_url = '';
+    $gas_folder_id = '';
     try {
         if (isset($pdo)) {
-            $gas_stmt = $pdo->query("SELECT `google_apps_script_url` FROM `settings` WHERE `id` = 1");
+            $gas_stmt = $pdo->query("SELECT `google_apps_script_url`, `google_drive_folder_id` FROM `settings` WHERE `id` = 1");
             if ($gas_stmt) {
                 $gas_row = $gas_stmt->fetch();
                 $gas_url = !empty($gas_row['google_apps_script_url']) ? trim($gas_row['google_apps_script_url']) : '';
+                $gas_folder_id = !empty($gas_row['google_drive_folder_id']) ? trim($gas_row['google_drive_folder_id']) : '';
             }
         }
     } catch (Exception $db_err) {
         $gas_url = '';
+        $gas_folder_id = '';
     }
 
     // กรณีตรวจพบ URL ของ Google Apps Script Web App ให้ทำการส่งไฟล์ภาพไปเก็บที่ Google Drive ของผู้ใช้โดยตรง
@@ -119,7 +122,8 @@ function uploadFileToServer($file, $allowed_types = 'jpg,jpeg,png,gif,pdf,doc,do
             $payload = json_encode([
                 'filename' => $file['name'],
                 'mimeType' => $mime_type,
-                'base64' => $base64_data
+                'base64' => $base64_data,
+                'folderId' => $gas_folder_id
             ]);
 
             // ส่ง HTTP POST ไปประมวลผลบนเซิร์ฟเวอร์กูเกิลไดรฟ์โดยตรง
@@ -219,6 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
     $director_message_title = cleanInput($_POST['director_message_title'] ?? '');
     $director_message = cleanInput($_POST['director_message'] ?? '');
     $google_apps_script_url = cleanInput($_POST['google_apps_script_url'] ?? '');
+    $google_drive_folder_id = cleanInput($_POST['google_drive_folder_id'] ?? '');
 
     try {
         $existing_stmt = $pdo->query("SELECT school_logo, banner_bg_image, banner_right_image FROM `settings` WHERE `id` = 1");
@@ -299,7 +304,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             `banner_subtitle` = :banner_subtitle,
             `director_message_title` = :director_message_title,
             `director_message` = :director_message,
-            `google_apps_script_url` = :google_apps_script_url
+            `google_apps_script_url` = :google_apps_script_url,
+            `google_drive_folder_id` = :google_drive_folder_id
             WHERE `id` = 1");
         
         $stmt->execute([
@@ -322,7 +328,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             'banner_subtitle' => $banner_subtitle,
             'director_message_title' => $director_message_title,
             'director_message' => $director_message,
-            'google_apps_script_url' => $google_apps_script_url
+            'google_apps_script_url' => $google_apps_script_url,
+            'google_drive_folder_id' => $google_drive_folder_id
         ]);
 
         $success_alert = 'อัปเดตข้อมูลทั่วไปของสถานศึกษาโรงเรียนบ้านหนองหว้าเรียบร้อยแล้ว!';

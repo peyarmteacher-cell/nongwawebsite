@@ -360,9 +360,14 @@ try {
         }
     }
 
-    // เพิ่มฟิลด์ google_apps_script_url แบบสากล (รองรับทั้ง SQLite และ MySQL)
+    // เพิ่มฟิลด์ google_apps_script_url และ google_drive_folder_id แบบสากล (รองรับทั้ง SQLite และ MySQL)
     try {
         $pdo->exec("ALTER TABLE `settings` ADD COLUMN `google_apps_script_url` text DEFAULT NULL;");
+    } catch (Exception $col_err) {
+        // หากคอลัมน์มีอยู่แล้วจะเกิด Exception ซึ่งเราข้ามได้ทันทีอย่างปลอดภัย
+    }
+    try {
+        $pdo->exec("ALTER TABLE `settings` ADD COLUMN `google_drive_folder_id` text DEFAULT NULL;");
     } catch (Exception $col_err) {
         // หากคอลัมน์มีอยู่แล้วจะเกิด Exception ซึ่งเราข้ามได้ทันทีอย่างปลอดภัย
     }
