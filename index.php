@@ -282,12 +282,22 @@ foreach ($students_list as $std) {
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none lg:hidden"></div>
         </div>
         
-        <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-12 w-full text-white">
+        <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 xl:gap-24 w-full text-white">
             
             <!-- ฝั่งซ้าย: ภาพแบนเนอร์ไฮไลท์ (Banner Highlight Image) ย้ายมาอยู่ฝั่งซ้ายและคลายขอบเขตการดีไซน์เพื่อให้เข้ากับภาพโปร่งใส PNG อย่างสมดุล -->
-            <div class="w-full lg:w-5/12 flex justify-center lg:justify-start relative z-20 animate-fade-in order-1 lg:order-1">
-                <div class="relative max-w-sm w-full group hover:scale-[1.04] transition-all duration-300">
-                    <img id="banner_right_img" src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_right)); ?>" alt="Banner Highlight" class="w-full max-h-80 md:max-h-[420px] object-contain filter drop-shadow-[0_20px_50px_rgba(244,63,94,0.15)]" referrerPolicy="no-referrer">
+            <div class="w-full lg:w-5/12 flex justify-center lg:justify-end relative z-20 animate-fade-in order-1 lg:order-1">
+                <div class="relative max-w-sm w-full group hover:scale-[1.04] transition-all duration-500 font-sans">
+                    <!-- เอฟเฟกต์แสงเรืองสีชมพูละมุนด้านหลัง ช่วยขับเน้นรูปภาพและลดขอบดำของภาพ PNG ให้ดูมีมิติสวยงามกลมกลืน -->
+                    <div class="absolute -inset-1.5 bg-gradient-to-r from-school-pink via-pink-600 to-rose-400 rounded-[2.5rem] blur-2xl opacity-40 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
+                    
+                    <!-- กรอบรูปภาพสไตล์พรีเมียม (Glassmorphism Frame) ช่วยให้ภาพ PNG/JPG เข้ากับดีไซน์เว็บได้อย่างสมบูรณ์แบบ -->
+                    <div class="relative bg-slate-900/40 backdrop-blur-md p-3 sm:p-4 rounded-[2.2rem] border border-white/10 shadow-2xl overflow-hidden flex items-center justify-center">
+                        <!-- เลเยอร์เคลือบขอบเกลี่ยแบบโปร่งแสง เพื่อลบขอบแข็งและช่วยให้ส่วนตัดของขอบภาพล่างสุดกลมกลืนกับพื้นหลังได้นุ่มนวลสูงสุด -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/25 pointer-events-none z-10"></div>
+                        <div class="absolute inset-0 bg-gradient-to-r from-slate-950/20 via-transparent to-slate-950/20 pointer-events-none z-10"></div>
+                        
+                        <img id="banner_right_img" src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_right)); ?>" alt="Banner Highlight" class="w-full h-auto max-h-80 md:max-h-[380px] object-contain rounded-2xl filter contrast-[1.02] brightness-105" referrerPolicy="no-referrer">
+                    </div>
                 </div>
             </div>
 
