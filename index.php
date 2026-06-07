@@ -61,8 +61,12 @@ try {
 }
 
 // 3. ดึงทำเนียบข้าราชการครู
-$teacher_filters_map = [
+$teacher_menu_filters = [
     'ทั้งหมด' => 'ทั้งหมด',
+    'ผู้บริหาร' => 'ผู้บริหาร',
+    'บุคลากร' => 'บุคลากร'
+];
+$teacher_label_map = [
     'ผู้บริหาร' => 'ผู้บริหาร',
     'กลุ่มสาระการเรียนรู้วิทยาศาสตร์' => 'วิทยาศาสตร์',
     'กลุ่มสาระการเรียนรู้คณิตศาสตร์' => 'คณิตศาสตร์',
@@ -75,15 +79,26 @@ $teacher_filters_map = [
     'ปฐมวัย' => 'ปฐมวัย',
     'งานสอนทั่วไป' => 'งานสอนทั่วไป'
 ];
-$teacher_filters = array_keys($teacher_filters_map);
 $selected_group = isset($_GET['group']) ? cleanInput($_GET['group']) : 'ทั้งหมด';
+if (!array_key_exists($selected_group, $teacher_menu_filters)) {
+    $selected_group = 'ทั้งหมด';
+}
 
 try {
-    if ($selected_group === 'ทั้งหมด' || !in_array($selected_group, $teacher_filters)) {
+    // ดึงจำนวนครูทั้งหมดในระบบก่อนเพื่อใช้ใน STAT PACK ให้แม่นยำครบถ้วนจริง
+    $total_teachers_stmt = $pdo->query("SELECT COUNT(*) FROM `teachers`");
+    $total_teachers_count = intval($total_teachers_stmt->fetchColumn());
+} catch (Exception $e) {
+    $total_teachers_count = 0;
+}
+
+try {
+    if ($selected_group === 'ทั้งหมด') {
         $teachers_stmt = $pdo->query("SELECT * FROM `teachers` ORDER BY `sort_order` ASC, `id` ASC");
-    } else {
-        $teachers_stmt = $pdo->prepare("SELECT * FROM `teachers` WHERE `subject_group` = :grp ORDER BY `sort_order` ASC, `id` ASC");
-        $teachers_stmt->execute(['grp' => $selected_group]);
+    } elseif ($selected_group === 'ผู้บริหาร') {
+        $teachers_stmt = $pdo->query("SELECT * FROM `teachers` WHERE `subject_group` = 'ผู้บริหาร' ORDER BY `sort_order` ASC, `id` ASC");
+    } else { // 'บุคลากร' - แสดงภาพคุณครูและบุคลากรทั้งหมดที่ไม่ใช่ผู้บริหาร
+        $teachers_stmt = $pdo->query("SELECT * FROM `teachers` WHERE `subject_group` != 'ผู้บริหาร' ORDER BY `sort_order` ASC, `id` ASC");
     }
     $teachers_list = $teachers_stmt->fetchAll();
 } catch (Exception $e) {
@@ -375,7 +390,7 @@ foreach ($students_list as $std) {
                 </div>
                 <div>
                     <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ครูและบุคลากร</div>
-                    <div class="text-2xl font-heading font-black text-slate-800"><?php echo count($teachers_list) + 4; ?> ท่าน</div>
+                    <div class="text-2xl font-heading font-black text-slate-800"><?php echo htmlspecialchars($total_teachers_count); ?> ท่าน</div>
                 </div>
             </div>
 
@@ -510,9 +525,9 @@ foreach ($students_list as $std) {
                 </div>
                 <!-- กรองฝ่ายงานครู -->
                 <div class="flex flex-wrap gap-1.5 max-w-4xl">
-                    <?php foreach ($teacher_filters as $grp): ?>
-                        <a href="index.php?group=<?php echo urlencode($grp); ?>#teachers" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition <?php echo $selected_group === $grp ? 'bg-school-pink text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'; ?>">
-                            <?php echo isset($teacher_filters_map[$grp]) ? $teacher_filters_map[$grp] : $grp; ?>
+                    <?php foreach ($teacher_menu_filters as $key => $val): ?>
+                        <a href="index.php?group=<?php echo urlencode($key); ?>#teachers" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition <?php echo $selected_group === $key ? 'bg-school-pink text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'; ?>">
+                            <?php echo $val; ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -534,7 +549,7 @@ foreach ($students_list as $std) {
                         <span class="mt-auto inline-block bg-pink-50 text-school-pink text-[9px] font-extrabold px-2.5 py-1 rounded-full">
                             <?php 
                             $raw_grp = $teacher['subject_group'] ?? 'งานสอนทั่วไป';
-                            echo htmlspecialchars(isset($teacher_filters_map[$raw_grp]) ? $teacher_filters_map[$raw_grp] : $raw_grp); 
+                            echo htmlspecialchars(isset($teacher_label_map[$raw_grp]) ? $teacher_label_map[$raw_grp] : $raw_grp); 
                             ?>
                         </span>
                     </div>

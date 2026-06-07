@@ -55,6 +55,9 @@ $teachers_list = $pdo->query("SELECT * FROM `teachers` ORDER BY `sort_order` ASC
                         <option value="ครู คศ.1" <?php echo ($edit_teacher_item['level'] == 'ครู คศ.1') ? 'selected' : ''; ?>>ครู คศ.1</option>
                         <option value="ครูผู้ช่วย" <?php echo ($edit_teacher_item['level'] == 'ครูผู้ช่วย') ? 'selected' : ''; ?>>ครูผู้ช่วย</option>
                         <option value="พนักงานราชการ" <?php echo ($edit_teacher_item['level'] == 'พนักงานราชการ') ? 'selected' : ''; ?>>พนักงานราชการ</option>
+                        <option value="ครูอัตราจ้าง" <?php echo ($edit_teacher_item['level'] == 'ครูอัตราจ้าง') ? 'selected' : ''; ?>>ครูอัตราจ้าง</option>
+                        <option value="เจ้าหน้าที่ธุรการ" <?php echo ($edit_teacher_item['level'] == 'เจ้าหน้าที่ธุรการ') ? 'selected' : ''; ?>>เจ้าหน้าที่ธุรการ</option>
+                        <option value="นักการภารโรง" <?php echo ($edit_teacher_item['level'] == 'นักการภารโรง') ? 'selected' : ''; ?>>นักการภารโรง</option>
                     </select>
                 </div>
                 
@@ -135,6 +138,9 @@ $teachers_list = $pdo->query("SELECT * FROM `teachers` ORDER BY `sort_order` ASC
                         <option value="ครู คศ.1">ครู คศ.1</option>
                         <option value="ครูผู้ช่วย">ครูผู้ช่วย</option>
                         <option value="พนักงานราชการ" selected>พนักงานราชการ</option>
+                        <option value="ครูอัตราจ้าง">ครูอัตราจ้าง</option>
+                        <option value="เจ้าหน้าที่ธุรการ">เจ้าหน้าที่ธุรการ</option>
+                        <option value="นักการภารโรง">นักการภารโรง</option>
                     </select>
                 </div>
 
