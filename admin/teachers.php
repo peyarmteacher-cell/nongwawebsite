@@ -61,13 +61,17 @@ $teachers_list = $pdo->query("SELECT * FROM `teachers` ORDER BY `sort_order` ASC
                 <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1">
                         <label class="block text-indigo-200">กลุ่มสาระวิชาการหลัก</label>
-                        <select name="teacher_group" class="w-full bg-indigo-900 border border-indigo-850 text-white rounded-xl p-2.5 outline-none focus:ring-1 focus:ring-school-pink">
+                        <select name="teacher_group" class="w-full bg-indigo-900 border border-indigo-850 text-white rounded-xl p-2.5 outline-none focus:ring-1 focus:ring-school-pink-dark">
                             <option value="ผู้บริหาร" <?php echo ($edit_teacher_item['subject_group'] == 'ผู้บริหาร') ? 'selected' : ''; ?>>ผู้บริหาร</option>
-                            <option value="วิชาการคณิตศาสตร์" <?php echo ($edit_teacher_item['subject_group'] == 'วิชาการคณิตศาสตร์') ? 'selected' : ''; ?>>คณิตศาสตร์</option>
-                            <option value="วิทยาศาสตร์" <?php echo ($edit_teacher_item['subject_group'] == 'วิทยาศาสตร์') ? 'selected' : ''; ?>>วิทยาศาสตร์</option>
-                            <option value="ภาษาไทย" <?php echo ($edit_teacher_item['subject_group'] == 'ภาษาไทย') ? 'selected' : ''; ?>>ภาษาไทย</option>
-                            <option value="ระดับปฐมวัย" <?php echo ($edit_teacher_item['subject_group'] == 'ระดับปฐมวัย') ? 'selected' : ''; ?>>ปฐมวัย</option>
-                            <option value="สุขศึกษาและพลศึกษา" <?php echo ($edit_teacher_item['subject_group'] == 'สุขศึกษาและพลศึกษา') ? 'selected' : ''; ?>>สุขศึกษาและพลศึกษา</option>
+                            <option value="กลุ่มสาระการเรียนรู้วิทยาศาสตร์" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้วิทยาศาสตร์') ? 'selected' : ''; ?>>วิทยาศาสตร์และเทคโนโลยี</option>
+                            <option value="กลุ่มสาระการเรียนรู้คณิตศาสตร์" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้คณิตศาสตร์') ? 'selected' : ''; ?>>คณิตศาสตร์</option>
+                            <option value="กลุ่มสาระการเรียนรู้ศิลปะ" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้ศิลปะ') ? 'selected' : ''; ?>>ศิลปะ</option>
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาไทย" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้ภาษาไทย') ? 'selected' : ''; ?>>ภาษาไทย</option>
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ') ? 'selected' : ''; ?>>ภาษาต่างประเทศ</option>
+                            <option value="กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม') ? 'selected' : ''; ?>>สังคมศึกษา ศาสนา และวัฒนธรรม</option>
+                            <option value="กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี') ? 'selected' : ''; ?>>การงานอาชีพและเทคโนโลยี</option>
+                            <option value="กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา" <?php echo ($edit_teacher_item['subject_group'] == 'กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา') ? 'selected' : ''; ?>>สุขศึกษาและพลศึกษา</option>
+                            <option value="ปฐมวัย" <?php echo ($edit_teacher_item['subject_group'] == 'ปฐมวัย') ? 'selected' : ''; ?>>ปฐมวัย</option>
                             <option value="งานสอนทั่วไป" <?php echo ($edit_teacher_item['subject_group'] == 'งานสอนทั่วไป') ? 'selected' : ''; ?>>งานสอนทั่วไป</option>
                         </select>
                     </div>
@@ -139,11 +143,15 @@ $teachers_list = $pdo->query("SELECT * FROM `teachers` ORDER BY `sort_order` ASC
                         <label class="block">กลุ่มสาระการเรียนรู้</label>
                         <select name="teacher_group" class="w-full rounded-xl border border-pink-100 p-2.5 text-xs font-bold bg-white focus:ring-1 focus:ring-school-pink outline-none">
                             <option value="ผู้บริหาร">ผู้บริหาร</option>
-                            <option value="วิชาการคณิตศาสตร์">วิชาการคณิตศาสตร์</option>
-                            <option value="วิทยาศาสตร์">วิทยาศาสตร์</option>
-                            <option value="ภาษาไทย">ภาษาไทย</option>
-                            <option value="ระดับปฐมวัย">ระดับปฐมวัย</option>
-                            <option value="สุขศึกษาและพลศึกษา">สุขศึกษาและพลศึกษา</option>
+                            <option value="กลุ่มสาระการเรียนรู้วิทยาศาสตร์">วิทยาศาสตร์และเทคโนโลยี</option>
+                            <option value="กลุ่มสาระการเรียนรู้คณิตศาสตร์">คณิตศาสตร์</option>
+                            <option value="กลุ่มสาระการเรียนรู้ศิลปะ">ศิลปะ</option>
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาไทย">ภาษาไทย</option>
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ">ภาษาต่างประเทศ</option>
+                            <option value="กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม">สังคมศึกษา ศาสนา และวัฒนธรรม</option>
+                            <option value="กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี">การงานอาชีพและเทคโนโลยี</option>
+                            <option value="กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา">สุขศึกษาและพลศึกษา</option>
+                            <option value="ปฐมวัย">ปฐมวัย</option>
                             <option value="งานสอนทั่วไป" selected>งานสอนทั่วไป</option>
                         </select>
                     </div>

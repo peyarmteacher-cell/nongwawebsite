@@ -27,6 +27,21 @@ try {
 } catch (Exception $e) {
     $teachers_list = [];
 }
+
+$teacher_filters_map = [
+    'ทั้งหมด' => 'ทั้งหมด',
+    'ผู้บริหาร' => 'ผู้บริหาร',
+    'กลุ่มสาระการเรียนรู้วิทยาศาสตร์' => 'วิทยาศาสตร์',
+    'กลุ่มสาระการเรียนรู้คณิตศาสตร์' => 'คณิตศาสตร์',
+    'กลุ่มสาระการเรียนรู้ศิลปะ' => 'ศิลปะ',
+    'กลุ่มสาระการเรียนรู้ภาษาไทย' => 'ภาษาไทย',
+    'กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ' => 'ภาษาต่างประเทศ',
+    'กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม' => 'สังคมศึกษาฯ',
+    'กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี' => 'การงานอาชีพฯ',
+    'กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา' => 'สุขศึกษาฯ',
+    'ปฐมวัย' => 'ปฐมวัย',
+    'งานสอนทั่วไป' => 'งานสอนทั่วไป'
+];
 ?>
 <!DOCTYPE html>
 <html lang="th" class="scroll-smooth">
@@ -149,7 +164,10 @@ try {
                                     </div>
                                     <div class="space-y-1">
                                         <span class="inline-block bg-pink-50 text-school-pink text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
-                                            <?php echo htmlspecialchars($teacher['subject_group'] ?? 'กลุ่มสาระการเรียนรู้'); ?>
+                                            <?php 
+                                            $raw_grp = $teacher['subject_group'] ?? 'งานสอนทั่วไป';
+                                            echo htmlspecialchars(isset($teacher_filters_map[$raw_grp]) ? $teacher_filters_map[$raw_grp] : $raw_grp); 
+                                            ?>
                                         </span>
                                         <h4 class="font-heading font-extrabold text-slate-800 text-base leading-snug">
                                             <?php echo htmlspecialchars($teacher['name']); ?>

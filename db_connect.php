@@ -580,7 +580,7 @@ try {
     if (!$countTeachers) {
         $pdo->exec("INSERT INTO `teachers` (`id`, `name`, `position`, `level`, `subject_group`, `image_url`, `sort_order`) VALUES 
             (1, 'นายอำนวย ยอดครูใหญ่', 'ผู้อำนวยการโรงเรียนบ้านหนองหว้า', 'ผู้อำนวยการโรงเรียน (คศ.3)', 'ผู้บริหาร', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=300', 1),
-            (2, 'นางสมศรี ปัญญาไว', 'ครูวิชาการระดับประถม / ครูประจำชั้นประถมศึกษาปีที่ 6', 'ครูชำนาญการพิเศษ (คศ.3)', 'วิชาการคณิตศาสตร์', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300', 2);");
+            (2, 'นางสมศรี ปัญญาไว', 'ครูวิชาการระดับประถม / ครูประจำชั้นประถมศึกษาปีที่ 6', 'ครูชำนาญการพิเศษ (คศ.3)', 'กลุ่มสาระการเรียนรู้คณิตศาสตร์', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300', 2);");
     }
 
     $countStudents = $pdo->query("SELECT id FROM `students` LIMIT 1")->fetch();
@@ -674,6 +674,17 @@ try {
             (3, 'DLTV มูลนิธิการศึกษาทางไกลผ่านดาวเทียม', 'รับชมการเรียนการสอนทางไกลและดาวน์โหลดสื่อประกอบการสอนปฐมวัย-ประถม', 'https://www.dltv.ac.th', 'https://images.unsplash.com/photo-1516534775068-ba3e84589d90?auto=format&fit=crop&q=80&w=300', 'สื่อการเรียนรู้'),
             (4, 'ระบบปัจจัยพื้นฐานนักเรียนยากจนพิเศษ CCT', 'บันทึกคุณลักษณะและการดำเนินงานจัดสรรงบประมาณช่วยเหลือนักเรียน', 'https://www.cct.or.th', 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&q=80&w=300', 'งานครูและลิงก์หน่วยงาน');");
     }
+
+    // ย้าย/ปรับชื่อกลุ่มสาระระบบเก่าสู่โครงสร้าง 8 กลุ่มสาระและปฐมวัยมาตรฐานที่ผู้ใช้อัปเกรด
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้คณิตศาสตร์' WHERE `subject_group` = 'วิชาการคณิตศาสตร์'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้วิทยาศาสตร์' WHERE `subject_group` = 'วิทยาศาสตร์'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'ปฐมวัย' WHERE `subject_group` = 'ระดับปฐมวัย' OR `subject_group` = 'ประถมศึกษา/ปฐมวัย' OR `subject_group` = 'ระดับชั้นพัฒนาการปฐมวัย'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้ภาษาไทย' WHERE `subject_group` = 'ภาษาไทย'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา' WHERE `subject_group` = 'สุขศึกษาและพลศึกษา'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้ศิลปะ' WHERE `subject_group` = 'ศิลปะ'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ' WHERE `subject_group` = 'ภาษาต่างประเทศ'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม' WHERE `subject_group` = 'สังคมศึกษา ศาสนา และวัฒนธรรม' OR `subject_group` = 'สังคมศึกษา'");
+    $pdo->exec("UPDATE `teachers` SET `subject_group` = 'กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี' WHERE `subject_group` = 'การงานอาชีพและเทคโนโลยี' OR `subject_group` = 'การงานอาชีพ'");
 
 } catch (Exception $e) {
     // ล้มเหลวแบบเงียบ

@@ -61,7 +61,21 @@ try {
 }
 
 // 3. ดึงทำเนียบข้าราชการครู
-$teacher_filters = ['ทั้งหมด', 'ผู้บริหาร', 'วิชาการคณิตศาสตร์', 'สุขศึกษาและพลศึกษา', 'ภาษาไทย', 'ระดับปฐมวัย'];
+$teacher_filters_map = [
+    'ทั้งหมด' => 'ทั้งหมด',
+    'ผู้บริหาร' => 'ผู้บริหาร',
+    'กลุ่มสาระการเรียนรู้วิทยาศาสตร์' => 'วิทยาศาสตร์',
+    'กลุ่มสาระการเรียนรู้คณิตศาสตร์' => 'คณิตศาสตร์',
+    'กลุ่มสาระการเรียนรู้ศิลปะ' => 'ศิลปะ',
+    'กลุ่มสาระการเรียนรู้ภาษาไทย' => 'ภาษาไทย',
+    'กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ' => 'ภาษาต่างประเทศ',
+    'กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม' => 'สังคมศึกษาฯ',
+    'กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี' => 'การงานอาชีพฯ',
+    'กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา' => 'สุขศึกษาฯ',
+    'ปฐมวัย' => 'ปฐมวัย',
+    'งานสอนทั่วไป' => 'งานสอนทั่วไป'
+];
+$teacher_filters = array_keys($teacher_filters_map);
 $selected_group = isset($_GET['group']) ? cleanInput($_GET['group']) : 'ทั้งหมด';
 
 try {
@@ -495,10 +509,10 @@ foreach ($students_list as $std) {
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-2 block">บุคลากรผู้สืบสานการศึกษาและจิตวิญญาณแห่งความเป็นครู</p>
                 </div>
                 <!-- กรองฝ่ายงานครู -->
-                <div class="flex flex-wrap gap-1.5">
+                <div class="flex flex-wrap gap-1.5 max-w-4xl">
                     <?php foreach ($teacher_filters as $grp): ?>
                         <a href="index.php?group=<?php echo urlencode($grp); ?>#teachers" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition <?php echo $selected_group === $grp ? 'bg-school-pink text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'; ?>">
-                            <?php echo $grp; ?>
+                            <?php echo isset($teacher_filters_map[$grp]) ? $teacher_filters_map[$grp] : $grp; ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -517,8 +531,11 @@ foreach ($students_list as $std) {
                         <p class="text-[10px] text-slate-400 font-medium leading-tight mb-2">
                             <?php echo htmlspecialchars($teacher['level']); ?>
                         </p>
-                        <span class="mt-auto inline-block bg-pink-50 text-school-pink text-[9px] font-extrabold px-2 py-0.5 rounded-full">
-                            <?php echo htmlspecialchars($teacher['subject_group'] ?? 'งานสอนทั่วไป'); ?>
+                        <span class="mt-auto inline-block bg-pink-50 text-school-pink text-[9px] font-extrabold px-2.5 py-1 rounded-full">
+                            <?php 
+                            $raw_grp = $teacher['subject_group'] ?? 'งานสอนทั่วไป';
+                            echo htmlspecialchars(isset($teacher_filters_map[$raw_grp]) ? $teacher_filters_map[$raw_grp] : $raw_grp); 
+                            ?>
                         </span>
                     </div>
                 <?php endforeach; ?>
