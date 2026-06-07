@@ -1312,6 +1312,12 @@ $settings = $settingsStmt->fetch();
                     return;
                 }
 
+                // สำหรับไฟล์ GIF หรือกราฟิกเวกเตอร์ SVG ไม่ต้องบีบอัดผ่าน Canvas เพื่อคงเฟรมภาพเคลื่อนไหวและความโปร่งใสต้นฉบับ 100%
+                if (file.type === 'image/gif' || file.type.includes('svg')) {
+                    resolve(file);
+                    return;
+                }
+
                 // สำหรับไฟล์รูปภาพที่มีขนาดต่ำกว่า 350KB ไม่จำเป็นต้องลดขนาด/บีบอัด ให้ใช้ต้นฉบับเลย
                 if (file.size < 350 * 1024) {
                     resolve(file);
@@ -1345,6 +1351,12 @@ $settings = $settingsStmt->fetch();
                         canvas.height = height;
 
                         const ctx = canvas.getContext('2d');
+                        
+                        // ตรวจสอบว่าเป็นไฟล์ PNG หรือไม่ เพื่อแยกประมวลผลรักษาค่าความโปร่งใส (Alpha channel / Transparent background)
+                        const isPng = file.type === 'image/png';
+                        const outputMime = isPng ? 'image/png' : 'image/jpeg';
+
+                        // วาดภาพต้นฉบับลงบน canvas (ถ้าเป็น PNG จะรักษาความโปร่งใสโดยอัตโนมัติเนื่องจากพื้นหลัง Canvas ใหม่เป็นแบบใส)
                         ctx.drawImage(img, 0, 0, width, height);
 
                         canvas.toBlob(function(blob) {
@@ -1352,17 +1364,18 @@ $settings = $settingsStmt->fetch();
                                 let originalName = file.name;
                                 let extIdx = originalName.lastIndexOf('.');
                                 let baseName = extIdx !== -1 ? originalName.substring(0, extIdx) : originalName;
-                                let newName = baseName + '_opt.jpg';
+                                let newExt = isPng ? '_opt.png' : '_opt.jpg';
+                                let newName = baseName + newExt;
 
                                 const compressedFile = new File([blob], newName, {
-                                    type: 'image/jpeg',
+                                    type: outputMime,
                                     lastModified: Date.now()
                                 });
                                 resolve(compressedFile);
                             } else {
                                 resolve(file);
                             }
-                        }, 'image/jpeg', quality);
+                        }, outputMime, isPng ? undefined : quality);
                     };
                     img.onerror = function() {
                         resolve(file);
