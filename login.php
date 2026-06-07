@@ -146,18 +146,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </button>
         </form>
 
-        <!-- หมายเหตุสำหรับผู้พัฒนา -->
-        <div class="bg-pink-50/50 rounded-2xl p-4 text-[11px] text-slate-500 space-y-1 border border-pink-100/30">
-            <span class="font-bold text-school-pink">บัญชีผู้ดูแลระบบตั้งต้น (Seeded):</span>
-            <ul class="list-disc list-inside space-y-0.5">
-                <li>ชื่อผู้ใช้งาน: <strong class="text-slate-800">admin</strong></li>
-                <li>รหัสผ่านสำหรับรัน: <strong class="text-slate-800">admin123</strong></li>
-            </ul>
-        </div>
-
         <div class="text-center">
             <a href="index.php" class="text-xs text-slate-400 hover:text-school-pink transition font-semibold flex items-center justify-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                <svg xmlns="http://www.w3.org/2500/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 กลับไปที่หน้าแรกของโรงเรียน
             </a>
         </div>

@@ -900,6 +900,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_teacher'])) {
     }
 }
 
+// ซ.2 การลงทะเบียนบัญชีแอดมินใหม่ (Add Admin User)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_admin'])) {
+    $adm_username = cleanInput($_POST['admin_username'] ?? '');
+    $adm_name = cleanInput($_POST['admin_name'] ?? '');
+    $adm_password = $_POST['admin_password'] ?? '';
+    $adm_role = cleanInput($_POST['admin_role'] ?? 'Editor');
+
+    if (empty($adm_username) || empty($adm_name) || empty($adm_password)) {
+        $err_alert = 'กรุณากรอกข้อมูลบัญชีให้ครบถ้วนทุกช่อง (ชื่อผู้ใช้, ชื่อจริง, และรหัสผ่าน)';
+    } else {
+        try {
+            // ตรวจสอบชื่อผู้ใช้ซ้ำ
+            $chk = $pdo->prepare("SELECT id FROM `users` WHERE `username` = :uname LIMIT 1");
+            $chk->execute(['uname' => $adm_username]);
+            if ($chk->fetch()) {
+                $err_alert = 'ชื่อผู้ใช้งานแอดมินนี้ถูกใช้งานไปแล้ว กรุณาเลือกชื่อผู้ใช้งานอื่น!';
+            } else {
+                $hashed_pwd = password_hash($adm_password, PASSWORD_BCRYPT);
+                $stmt = $pdo->prepare("INSERT INTO `users` (`username`, `password`, `name`, `role`) VALUES (:uname, :pwd, :name, :role)");
+                $stmt->execute([
+                    'uname' => $adm_username,
+                    'pwd' => $hashed_pwd,
+                    'name' => $adm_name,
+                    'role' => $adm_role
+                ]);
+                $success_alert = 'ลงทะเบียนบัญชีผู้ดูแลระบบ (Admin) ท่านใหม่เรียบร้อยแล้ว!';
+            }
+        } catch (Exception $e) {
+            $err_alert = 'เกิดข้อผิดพลาดในการเพิ่มบัญชีแอดมิน: ' . $e->getMessage();
+        }
+    }
+}
+
+// ซ.3 แก้ไขรหัสผ่านและโปรไฟล์บัญชีแอดมิน (Edit Admin User)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_admin_submit'])) {
+    $adm_id = intval($_POST['admin_id'] ?? 0);
+    $adm_username = cleanInput($_POST['admin_username'] ?? '');
+    $adm_name = cleanInput($_POST['admin_name'] ?? '');
+    $adm_password = $_POST['admin_password'] ?? '';
+    $adm_role = cleanInput($_POST['admin_role'] ?? 'Editor');
+
+    if (empty($adm_username) || empty($adm_name)) {
+        $err_alert = 'กรุณากรอกชื่อผู้ใช้ และชื่อ-นามสกุลจริง';
+    } else {
+        try {
+            // ตรวจสอบชื่อใช้งานซ้ำสำหรับผู้อื่น
+            $chk = $pdo->prepare("SELECT id FROM `users` WHERE `username` = :uname AND `id` != :id LIMIT 1");
+            $chk->execute(['uname' => $adm_username, 'id' => $adm_id]);
+            if ($chk->fetch()) {
+                $err_alert = 'ชื่อผู้ใช้ซ้ำกับผู้ใช้งานระบบคนอื่นแล้ว กรุณาเปลี่ยนชื่อผู้ใช้ใหม่';
+            } else {
+                if (!empty($adm_password)) {
+                    $hashed_pwd = password_hash($adm_password, PASSWORD_BCRYPT);
+                    $stmt = $pdo->prepare("UPDATE `users` SET `username` = :uname, `password` = :pwd, `name` = :name, `role` = :role WHERE `id` = :id");
+                    $stmt->execute([
+                        'uname' => $adm_username,
+                        'pwd' => $hashed_pwd,
+                        'name' => $adm_name,
+                        'role' => $adm_role,
+                        'id' => $adm_id
+                    ]);
+                } else {
+                    $stmt = $pdo->prepare("UPDATE `users` SET `username` = :uname, `name` = :name, `role` = :role WHERE `id` = :id");
+                    $stmt->execute([
+                        'uname' => $adm_username,
+                        'name' => $adm_name,
+                        'role' => $adm_role,
+                        'id' => $adm_id
+                    ]);
+                }
+
+                // หากแอดมินอัปเดตบัญชีที่ตนเองล็อกอินอยู่ ให้ทำการรีเซ็ตข้อมูล Session
+                if ($adm_id == $_SESSION['admin_id']) {
+                    $_SESSION['admin_username'] = $adm_username;
+                    $_SESSION['admin_name'] = $adm_name;
+                    $_SESSION['admin_role'] = $adm_role;
+                }
+
+                $success_alert = 'ปรับปรุงบัญชีผู้ดูแลระบบเสร็จสมบูรณ์เรียบร้อย!';
+            }
+        } catch (Exception $e) {
+            $err_alert = 'เกิดข้อผิดพลาดในการอัปเดตบัญชีผู้ใช้ระบบ: ' . $e->getMessage();
+        }
+    }
+}
+
 // 5. จัดการเหตุการณ์ลบข้อมูล (Delete actions)
 if (isset($_GET['action'])) {
     $action_to_do = $_GET['action'];
@@ -928,6 +1014,20 @@ if (isset($_GET['action'])) {
             $success_alert = 'ลบแฟ้มข้อมูลคุณครูข้าราชการท่านนั้นทิ้งเสร็จสมบูรณ์!';
         } catch (Exception $e) {
             $err_alert = 'เกิดข้อผิดพลาดในการลบข้อมูลครู: ' . $e->getMessage();
+        }
+    } elseif ($action_to_do === 'delete_admin' && $item_id > 0) {
+        if ($item_id === 1) {
+            $err_alert = 'ขออภัย! ระบบระงับสิทธิ์การลบแอดมินหลักลำดับแรก (ID = 1) เพื่อป้องกันการสูญเสียหลักเข้าถึงของระบบ';
+        } elseif ($item_id === intval($_SESSION['admin_id'])) {
+            $err_alert = 'ขออภัย! คุณไม่สามารถลบบัญชีแอดมินของตนเองในระหว่างที่ล็อกอินอยู่ได้';
+        } else {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM `users` WHERE `id` = :id");
+                $stmt->execute(['id' => $item_id]);
+                $success_alert = 'ลบบัญชีผู้ดูแลระบบ (Admin) ออกจากสารบบโรงเรียนร่วมเรียบร้อย!';
+            } catch (Exception $e) {
+                $err_alert = 'เกิดข้อผิดพลาดในการลบบัญชีแอดมิน: ' . $e->getMessage();
+            }
         }
     }
 }
@@ -1038,6 +1138,8 @@ $settings = $settingsStmt->fetch();
             $active_tab = 'teachers';
         } elseif (isset($_GET['edit_link']) || (isset($_GET['action']) && strpos($_GET['action'], 'link') !== false) || isset($_POST['add_link']) || isset($_POST['edit_link_submit'])) {
             $active_tab = 'links';
+        } elseif (isset($_GET['edit_admin']) || (isset($_GET['action']) && strpos($_GET['action'], 'admin') !== false) || isset($_POST['add_admin']) || isset($_POST['edit_admin_submit'])) {
+            $active_tab = 'admins';
         }
         ?>
         <div class="flex flex-wrap gap-1.5 border-b border-slate-200 pb-px">
@@ -1059,6 +1161,9 @@ $settings = $settingsStmt->fetch();
             <a href="admin.php?tab=links" class="px-4 py-3 rounded-t-2xl font-heading font-black text-xs sm:text-sm flex items-center gap-2 transition <?php echo $active_tab === 'links' ? 'bg-white text-school-pink border-t-2 border-school-pink border-x border-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-850 bg-slate-100/40 hover:bg-slate-100'; ?>">
                 🔗 สื่อและระบบงานครู
             </a>
+            <a href="admin.php?tab=admins" class="px-4 py-3 rounded-t-2xl font-heading font-black text-xs sm:text-sm flex items-center gap-2 transition <?php echo $active_tab === 'admins' ? 'bg-white text-school-pink border-t-2 border-school-pink border-x border-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-850 bg-slate-100/40 hover:bg-slate-100'; ?>">
+                🔑 จัดการบัญชีแอดมิน
+            </a>
         </div>
 
         <!-- คลังกล่องสวิตช์โหลดไฟล์เทมเพลตที่แยกโมดูลเรียบร้อยแล้ว -->
@@ -1076,6 +1181,8 @@ $settings = $settingsStmt->fetch();
                 require_once 'admin/teachers.php';
             } elseif ($active_tab === 'links') {
                 require_once 'admin/external_links.php';
+            } elseif ($active_tab === 'admins') {
+                require_once 'admin/admins.php';
             } else {
                 require_once 'admin/general.php';
             }

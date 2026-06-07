@@ -219,11 +219,55 @@ foreach ($students_list as $std) {
 
 ?>
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $settings['school_name']; ?> | ยินดีต้อนรับสู่รั้วชมพู-ขาว</title>
+    
+    <!-- === ชุดข้อมูล SEO ดักจับการค้นหาของ Google (SEO Search Optimization Meta Tags) === -->
+    <title><?php echo $settings['school_name']; ?> อ.หนองกี่ จ.บุรีรัมย์ | เว็บไซต์อย่างเป็นทางการ</title>
+    <meta name="description" content="เว็บไซต์อย่างเป็นทางการ โรงเรียนบ้านหนองหว้า อำเภอหนองกี่ จังหวัดบุรีรัมย์ สังกัดสำนักงานเขตพื้นที่การศึกษาประถมศึกษาบุรีรัมย์ เขต 3 มุ่งเน้นพัฒนาวิชาการ คุณธรรม จริยธรรม สารสนเทศแยกส่วนอัตลักษณ์ชมพูขาว ดักจับข้อมูลทำเนียบครู สถิตินักเรียน โทรศัพท์ <?php echo htmlspecialchars($settings['phone'] ?? ''); ?>">
+    <meta name="keywords" content="โรงเรียนบ้านหนองหว้า, โรงเรียนบ้านหนองหว้า บุรีรัมย์, โรงเรียนบ้านหนองหว้า อำเภอหนองกี่, โรงเรียนบ้านหนองหว้า ตำบลหนองกี่, หนองกี่, บุรีรัมย์, โรงเรียนประถมศึกษาบุรีรัมย์, สพป.บุรีรัมย์ เขต 3, ทำเนียบครู โรงเรียนบ้านหนองหว้า, ข้อมูลโรงเรียนบ้านหนองหว้า, โทรศัพท์โรงเรียนบ้านหนองหว้า, Bannongwa School, Bannongwa Buriram">
+    <meta name="author" content="โรงเรียนบ้านหนองหว้า บุรีรัมย์">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook (สำหรับการแชร์หน้าเว็บ) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?php echo (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']; ?>">
+    <meta property="og:title" content="<?php echo $settings['school_name']; ?> อ.หนองกี่ จ.บุรีรัมย์ | เว็บไซต์อย่างเป็นทางการ">
+    <meta property="og:description" content="โรงเรียนบ้านหนองหว้า ตั้งอยู่หมู่ที่ 2 บ้านหนองหว้า ตำบลหนองกี่ อำเภอหนองกี่ จังหวัดบุรีรัมย์ 31210 มุ่งเน้นคุณธรรมนำความรู้วิชาการ">
+    <meta property="og:image" content="<?php echo htmlspecialchars($settings['school_logo_url'] ?? 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=400'); ?>">
+
+    <!-- Twitter Tags -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="<?php echo $settings['school_name']; ?> อ.หนองกี่ จ.บุรีรัมย์ | เว็บไซต์อย่างเป็นทางการ">
+    <meta property="twitter:description" content="ยินดีต้อนรับสู่เว็บไซต์โรงเรียนบ้านหนองหว้า อ.หนองกี่ จ.บุรีรัมย์">
+    <meta property="twitter:image" content="<?php echo htmlspecialchars($settings['school_logo_url'] ?? 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=400'); ?>">
+
+    <!-- JSON-LD Structured Data Schema Markup (สำหรับการจัดทำดัชนีของบอท Google Search) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "School",
+      "name": "<?php echo htmlspecialchars($settings['school_name']); ?>",
+      "alternateName": "Bannongwa School",
+      "description": "โรงเรียนบ้านหนองหว้า อำเภอหนองกี่ จังหวัดบุรีรัมย์ สังกัดสำนักงานเขตพื้นที่การศึกษาประถมศึกษาบุรีรัมย์ เขต 3 พัฒนาการเล่าเรียนและเทคโนโลยีเยาวชนไทย",
+      "url": "<?php echo (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']; ?>",
+      "logo": "<?php echo htmlspecialchars($settings['school_logo_url'] ?? 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=400'); ?>",
+      "image": "<?php echo htmlspecialchars($settings['banner_right_url'] ?? 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format'); ?>",
+      "telephone": "<?php echo htmlspecialchars($settings['phone'] ?? ''); ?>",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "<?php echo htmlspecialchars($settings['address'] ?? 'หมู่ที่ 2 บ้านหนองหว้า'); ?>",
+        "addressLocality": "ตำบลหนองกี่ อำเภอหนองกี่",
+        "addressRegion": "จังหวัดบุรีรัมย์",
+        "postalCode": "31210",
+        "addressCountry": "TH"
+      }
+    }
+    </script>
+    <!-- === สิ้นสุด ชุดข้อมูล SEO === -->
+
     <!-- โหลดฟอนต์ภาษาไทยยอดนิยม Kanit & Sarabun -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- โหลด Tailwind CSS ผ่าน Play CDN เพื่อการประยุกต์ใช้งานทันที ไม่ต้องมี Node build บน host จริง -->
