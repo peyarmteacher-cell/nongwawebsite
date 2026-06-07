@@ -47,17 +47,40 @@ $news_categories = ['ประชาสัมพันธ์ทั่วไป',
 // หมวดหมู่ข่าวสารที่เลือก
 $selected_category = isset($_GET['cat']) ? cleanInput($_GET['cat']) : 'ทั้งหมด';
 
-// โหลดข่าวประชาสัมพันธ์ตามหมวดหมู่
+// โหลดข่าวประชาสัมพันธ์ตามหมวดหมู่ พร้อมจำกัดแค่ 2 แถว (หน้าละ 6 รายการ สำหรับจอคอมเกริด 3 คอลัมน์)
 try {
     if ($selected_category === 'ทั้งหมด' || !in_array($selected_category, $news_categories)) {
-        $news_stmt = $pdo->query("SELECT * FROM `news` ORDER BY `sticky_flag` DESC, `date` DESC, `id` DESC");
+        $count_stmt = $pdo->query("SELECT COUNT(*) FROM `news`");
+        $total_news_matching = intval($count_stmt->fetchColumn());
     } else {
-        $news_stmt = $pdo->prepare("SELECT * FROM `news` WHERE `category` = :cat ORDER BY `sticky_flag` DESC, `date` DESC, `id` DESC");
-        $news_stmt->execute(['cat' => $selected_category]);
+        $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM `news` WHERE `category` = :cat");
+        $count_stmt->execute(['cat' => $selected_category]);
+        $total_news_matching = intval($count_stmt->fetchColumn());
     }
+
+    $news_per_page = 6; // 2 แถว (แถวละ 3 คอลัมน์)
+    $total_news_pages = ceil($total_news_matching / $news_per_page);
+    $news_page = isset($_GET['npage']) ? max(1, intval($_GET['npage'])) : 1;
+    if ($news_page > $total_news_pages && $total_news_pages > 0) {
+        $news_page = $total_news_pages;
+    }
+    $offset = ($news_page - 1) * $news_per_page;
+
+    if ($selected_category === 'ทั้งหมด' || !in_array($selected_category, $news_categories)) {
+        $news_stmt = $pdo->prepare("SELECT * FROM `news` ORDER BY `sticky_flag` DESC, `date` DESC, `id` DESC LIMIT :limit OFFSET :offset");
+    } else {
+        $news_stmt = $pdo->prepare("SELECT * FROM `news` WHERE `category` = :cat ORDER BY `sticky_flag` DESC, `date` DESC, `id` DESC LIMIT :limit OFFSET :offset");
+        $news_stmt->bindValue(':cat', $selected_category, PDO::PARAM_STR);
+    }
+    $news_stmt->bindValue(':limit', $news_per_page, PDO::PARAM_INT);
+    $news_stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $news_stmt->execute();
     $news_list = $news_stmt->fetchAll();
 } catch (Exception $e) {
     $news_list = [];
+    $total_news_matching = 0;
+    $total_news_pages = 1;
+    $news_page = 1;
 }
 
 // 3. ดึงทำเนียบข้าราชการครู
@@ -513,6 +536,42 @@ foreach ($students_list as $std) {
                         </article>
                     <?php endforeach; ?>
                 </div>
+
+                <!-- ปุ่มสลับหน้าข่าว (News Pagination) สำหรับหน้าบ้าน -->
+                <?php if ($total_news_pages > 1): ?>
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-100/70 text-xs mt-6">
+                        <div class="text-slate-400 font-bold">
+                            ข่าวทั้งหมดในหมวดหมู่นี้: <?php echo htmlspecialchars($total_news_matching); ?> รายการ (หน้า <?php echo $news_page; ?> / <?php echo $total_news_pages; ?>)
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <?php if ($news_page > 1): ?>
+                                <a href="index.php?cat=<?php echo urlencode($selected_category); ?>&npage=<?php echo $news_page - 1; ?>#news" class="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-school-pink hover:border-school-pink/20 font-bold rounded-xl transition shadow-sm">
+                                    <span>ย้อนหลัง / ข้อมูลย้อนหลัง</span>
+                                </a>
+                            <?php else: ?>
+                                <span class="px-4 py-2.5 bg-slate-50 border border-slate-100 text-slate-350 font-bold rounded-xl cursor-not-allowed">ข้อมูลย้อนหลัง</span>
+                            <?php endif; ?>
+
+                            <div class="hidden sm:flex items-center gap-1.5">
+                                <?php for ($i = 1; $i <= $total_news_pages; $i++): ?>
+                                    <?php if ($i == $news_page): ?>
+                                        <span class="px-3.5 py-2 rounded-xl bg-school-pink text-white font-extrabold shadow-md shadow-pink-500/10"><?php echo $i; ?></span>
+                                    <?php else: ?>
+                                        <a href="index.php?cat=<?php echo urlencode($selected_category); ?>&npage=<?php echo $i; ?>#news" class="px-3.5 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition"><?php echo $i; ?></a>
+                                    <?php endif; ?>
+                                <?php endfor; ?>
+                            </div>
+
+                            <?php if ($news_page < $total_news_pages): ?>
+                                <a href="index.php?cat=<?php echo urlencode($selected_category); ?>&npage=<?php echo $news_page + 1; ?>#news" class="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-school-pink hover:border-school-pink/20 font-bold rounded-xl transition shadow-sm">
+                                    <span>หน้าถัดไป</span>
+                                </a>
+                            <?php else: ?>
+                                <span class="px-4 py-2.5 bg-slate-50 border border-slate-100 text-slate-350 font-bold rounded-xl cursor-not-allowed">หน้าถัดไป</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
         </section>
 

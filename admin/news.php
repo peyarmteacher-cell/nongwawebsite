@@ -17,7 +17,30 @@ if (isset($_GET['edit_news'])) {
 }
 
 // นับข่าวสารและดึงข้อมูลข่าวสารทั้งหมดมาแสดงในตาราง
-$news_list = $pdo->query("SELECT * FROM `news` ORDER BY `sticky_flag` DESC, `date` DESC, `id` DESC")->fetchAll();
+try {
+    $total_news_stmt = $pdo->query("SELECT COUNT(*) FROM `news`");
+    $total_news_count = intval($total_news_stmt->fetchColumn());
+} catch (Exception $e) {
+    $total_news_count = 0;
+}
+
+$news_per_page = 10;
+$total_pages = ceil($total_news_count / $news_per_page);
+$current_page = isset($_GET['news_page']) ? max(1, intval($_GET['news_page'])) : 1;
+if ($current_page > $total_pages && $total_pages > 0) {
+    $current_page = $total_pages;
+}
+$offset = ($current_page - 1) * $news_per_page;
+
+try {
+    $news_stmt_page = $pdo->prepare("SELECT * FROM `news` ORDER BY `sticky_flag` DESC, `date` DESC, `id` DESC LIMIT :limit OFFSET :offset");
+    $news_stmt_page->bindValue(':limit', $news_per_page, PDO::PARAM_INT);
+    $news_stmt_page->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $news_stmt_page->execute();
+    $news_list = $news_stmt_page->fetchAll();
+} catch (Exception $e) {
+    $news_list = [];
+}
 ?>
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
@@ -151,7 +174,7 @@ $news_list = $pdo->query("SELECT * FROM `news` ORDER BY `sticky_flag` DESC, `dat
                 <h4 class="font-heading font-black text-sm text-slate-800">
                     📰 สารบบข้อมูลข่าวประชาสัมพันธ์ ประชาคมโรงเรียน
                 </h4>
-                <span class="text-xs font-bold text-school-pink font-mono bg-pink-50 px-2 py-1 rounded-full">ทั้งหมด: <?php echo count($news_list); ?> ชิ้น</span>
+                <span class="text-xs font-bold text-school-pink font-mono bg-pink-50 px-2 py-1 rounded-full">ทั้งหมด: <?php echo htmlspecialchars($total_news_count); ?> ชิ้น</span>
             </div>
 
             <div class="overflow-x-auto">
@@ -188,7 +211,7 @@ $news_list = $pdo->query("SELECT * FROM `news` ORDER BY `sticky_flag` DESC, `dat
                                 </td>
                                 <td class="p-3 text-right space-x-1 whitespace-nowrap">
                                     <a href="admin.php?tab=news&edit_news=<?php echo $nw['id']; ?>" class="inline-block bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1.5 rounded-lg font-bold text-[10px]">✏️ แก้ไข</a>
-                                    <a href="admin.php?tab=news&action=delete_news&id=<?php echo $nw['id']; ?>" onclick="return confirm('ยืนยันลบข่าวสารชุดนี้ใช่หรือไม่? การเปลี่ยนแปลงจะไม่สามารถแก้ไขกลับคืนได้')" class="inline-block bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-lg font-bold text-[10px]">🗑️ ลบ</a>
+                                    <button onclick="if(confirm('ยืนยันลบข่าวสารชุดนี้ใช่หรือไม่? การเปลี่ยนแปลงจะไม่สามารถแก้ไขกลับคืนได้')) window.location.href='admin.php?tab=news&action=delete_news&id=<?php echo $nw['id']; ?>';" class="inline-block bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-lg font-bold text-[10px] cursor-pointer">🗑️ ลบ</button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -196,6 +219,36 @@ $news_list = $pdo->query("SELECT * FROM `news` ORDER BY `sticky_flag` DESC, `dat
                     </tbody>
                 </table>
             </div>
+
+            <!-- หมวดหมู่สลับหน้าข่าวแอดมิน (Admin News Pagination) -->
+            <?php if ($total_pages > 1): ?>
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 text-xs">
+                    <div class="text-slate-500 font-semibold text-center sm:text-left">
+                        แสดงผลหน้า <?php echo $current_page; ?> จากทั้งหมด <?php echo $total_pages; ?> หน้า
+                    </div>
+                    <div class="flex items-center gap-1.5 home-pagination">
+                        <?php if ($current_page > 1): ?>
+                            <a href="admin.php?tab=news&news_page=<?php echo $current_page - 1; ?>" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition">ก่อนหน้า</a>
+                        <?php else: ?>
+                            <span class="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-350 font-bold cursor-not-allowed">ก่อนหน้า</span>
+                        <?php endif; ?>
+
+                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                            <?php if ($i == $current_page): ?>
+                                <span class="px-3 py-1.5 rounded-lg bg-school-pink text-white font-extrabold shadow-sm"><?php echo $i; ?></span>
+                            <?php else: ?>
+                                <a href="admin.php?tab=news&news_page=<?php echo $i; ?>" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition"><?php echo $i; ?></a>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+
+                        <?php if ($current_page < $total_pages): ?>
+                            <a href="admin.php?tab=news&news_page=<?php echo $current_page + 1; ?>" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition">ถัดไป</a>
+                        <?php else: ?>
+                            <span class="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-350 font-bold cursor-not-allowed">ถัดไป</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
