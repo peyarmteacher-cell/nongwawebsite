@@ -273,60 +273,72 @@ foreach ($students_list as $std) {
     $banner_bg = !empty($settings['banner_bg_image']) ? $settings['banner_bg_image'] : (!empty($banners) ? $banners[0]['image_url'] : 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=1200');
     $banner_right = !empty($settings['banner_right_image']) ? $settings['banner_right_image'] : 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=600';
     ?>
-    <section class="relative bg-slate-950 overflow-hidden min-h-[500px] flex items-center py-12 md:py-20 border-b border-pink-500/10">
-        <!-- ภาพพื้นหลังแบนเนอร์ (ฝั่งขวา) ปิดปัญหาขอบแกร่งด้วยการทำเกรเดียนต์ปิดจุดตัดเพื่อให้สีกลมกลืน -->
-        <div class="absolute inset-y-0 right-0 w-full lg:w-3/5 z-0">
-            <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_bg)); ?>" alt="Banner Background" class="w-full h-full object-cover opacity-25 lg:opacity-45 filter brightness-90 contrast-105" referrerPolicy="no-referrer">
-            <!-- ไล่ระดับสีคู่ตรงข้าม เพื่อให้ข้อความฝั่งขวาอ่านเด่นชัดสะอาดตาที่สุด -->
-            <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950/50 pointer-events-none"></div>
+    <section class="relative bg-slate-950 overflow-hidden min-h-[500px] lg:min-h-[580px] flex items-center py-12 md:py-20 border-b border-pink-500/10">
+        <!-- 1. ภาพพื้นหลังแบนเนอร์ฝั่งขวา (โครงสร้างอาคารโรงเรียน) -->
+        <div class="absolute inset-y-0 right-0 w-full lg:w-1/2 z-0 pointer-events-none">
+            <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_bg)); ?>" alt="Banner Background Logo" class="w-full h-full object-cover opacity-15 lg:opacity-30 filter brightness-75 contrast-100" referrerPolicy="no-referrer">
+            <!-- ไล่ระดับสีคู่ตรงข้ามเข้าหากึ่งกลางเพื่อให้ข้อความเด่นชัดกระชับขึ้น -->
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent pointer-events-none"></div>
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none lg:hidden"></div>
         </div>
-        
-        <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 xl:gap-24 w-full text-white">
+
+        <!-- 2. ภาพแบนเนอร์ไฮไลต์ฝั่งซ้าย (กลุ่มบุคลากร) คลายตัวเต็มความสูงกลมกลืนสะกดตา -->
+        <div class="absolute inset-y-0 left-0 w-full lg:w-3/5 z-0 pointer-events-none overflow-hidden">
+            <!-- รูปภาพสะท้อนแสงสว่างสดใส (ตามที่ลูกค้าต้องการสว่างกว่าพื้นหลังฝั่งขวา) -->
+            <img src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_right)); ?>" alt="Banner Highlight Background" class="w-full h-full object-cover lg:object-contain object-left-bottom opacity-75 lg:opacity-90 filter brightness-125 contrast-[1.05] saturate-[1.08]" referrerPolicy="no-referrer">
             
-            <!-- ฝั่งซ้าย: ภาพแบนเนอร์ไฮไลท์ (Banner Highlight Image) ย้ายมาอยู่ฝั่งซ้ายและคลายขอบเขตการดีไซน์เพื่อให้เข้ากับภาพโปร่งใส PNG อย่างสมดุล -->
-            <div class="w-full lg:w-5/12 flex justify-center lg:justify-end relative z-20 animate-fade-in order-1 lg:order-1">
-                <div class="relative max-w-sm w-full group hover:scale-[1.04] transition-all duration-500 font-sans">
-                    <!-- เอฟเฟกต์แสงเรืองสีชมพูละมุนด้านหลัง ช่วยขับเน้นรูปภาพและลดขอบดำของภาพ PNG ให้ดูมีมิติสวยงามกลมกลืน -->
-                    <div class="absolute -inset-1.5 bg-gradient-to-r from-school-pink via-pink-600 to-rose-400 rounded-[2.5rem] blur-2xl opacity-40 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
-                    
-                    <!-- กรอบรูปภาพสไตล์พรีเมียม (Glassmorphism Frame) ช่วยให้ภาพ PNG/JPG เข้ากับดีไซน์เว็บได้อย่างสมบูรณ์แบบ -->
-                    <div class="relative bg-slate-900/40 backdrop-blur-md p-3 sm:p-4 rounded-[2.2rem] border border-white/10 shadow-2xl overflow-hidden flex items-center justify-center">
-                        <!-- เลเยอร์เคลือบขอบเกลี่ยแบบโปร่งแสง เพื่อลบขอบแข็งและช่วยให้ส่วนตัดของขอบภาพล่างสุดกลมกลืนกับพื้นหลังได้นุ่มนวลสูงสุด -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/25 pointer-events-none z-10"></div>
-                        <div class="absolute inset-0 bg-gradient-to-r from-slate-950/20 via-transparent to-slate-950/20 pointer-events-none z-10"></div>
+            <!-- เกรเดียนต์ลบขอบแข็งของภาพ (รวมถึงพื้นหลังสีดำของภาพต้นฉบับ) ด้วยโทนสี Slate-950 แท้ของเว็บไซต์เพื่อความนุ่มนวลสูงสุด -->
+            <!-- ละลายขอบขวาเข้าหากึ่งกลาง -->
+            <div class="absolute inset-y-0 right-0 w-1/3 lg:w-1/2 bg-gradient-to-r from-transparent via-slate-950/50 to-slate-950 pointer-events-none"></div>
+            <!-- ละลายกลางภาพออกสู่ด้านขวาเข้มขึ้นเพื่อกันเสียงสะท้อน -->
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-slate-950/20 to-slate-950 pointer-events-none"></div>
+            <!-- ละลายขอบล่างป้องขอบตัดตรง -->
+            <div class="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-slate-950 to-transparent pointer-events-none"></div>
+            <!-- ละลายขอบบนเชื่อมส่วนหัว -->
+            <div class="absolute inset-x-0 top-0 h-1/5 bg-gradient-to-b from-slate-950 to-transparent pointer-events-none"></div>
+            <!-- ละลายขอบซ้ายสุด -->
+            <div class="absolute inset-y-0 left-0 w-1/12 bg-gradient-to-l from-transparent to-slate-950 pointer-events-none"></div>
+        </div>
+
+        <!-- แสงเรืองออร่าชมพูอมส้มหวานอุ่นเพิ่มมิมิติด้านล่างภาพเพื่อความพรีเมียม -->
+        <div class="absolute left-1/4 top-1/2 -translate-y-1/2 -translate-x-1/2 w-[380px] h-[380px] bg-school-pink/10 rounded-full blur-[90px] pointer-events-none z-0"></div>
+        
+        <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-white">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- สเปเซอร์ฝั่งซ้าย: ขยับที่ว่างลดลงเพื่อให้ตัวอักษรขยับเข้าใกล้รูปภาพกลางแบนเนอร์ทางซ้ายมือได้อย่างกระชับสวยงามยิ่งขึ้น -->
+                <div class="hidden lg:block lg:col-span-4 h-2"></div>
+                
+                <!-- ฝั่งขวา: ข้อความและปุ่มคำสั่งหลัก ขยับเข้ามาใกล้รูปภาพอย่างมีสไตล์พรีเมียมระดับสากล -->
+                <div class="space-y-6 lg:col-span-8 flex flex-col items-center lg:items-start text-center lg:text-left transition-all duration-500">
+                    <!-- เสริมเลเยอร์กระจกโปร่งแสง Glassmorphism ชนิดบางเบาเพื่อความประณีตระดับมืออาชีพ และรับประกันความอ่านง่าย 100% -->
+                    <div class="lg:bg-slate-950/40 lg:backdrop-blur-[2px] lg:border lg:border-white/5 lg:p-6 lg:rounded-3xl lg:shadow-xl lg:-ml-8 space-y-6 w-full max-w-2xl">
+                        <span class="inline-block bg-school-pink/15 text-pink-300 border border-school-pink/30 text-xs sm:text-sm md:text-base tracking-wider uppercase font-black px-5 py-2.5 rounded-full shadow-inner">
+                            <?php echo htmlspecialchars($settings['banner_title'] ?? 'ยินดีต้อนรับสู่รั้วชมพู-ขาว แหล่งการศึกษาระดับเยาวชนต้นแบบ'); ?>
+                        </span>
                         
-                        <img id="banner_right_img" src="<?php echo htmlspecialchars(fixGoogleDriveUrl($banner_right)); ?>" alt="Banner Highlight" class="w-full h-auto max-h-80 md:max-h-[380px] object-contain rounded-2xl filter contrast-[1.02] brightness-105" referrerPolicy="no-referrer">
+                        <h2 class="text-3.5xl sm:text-5.5xl font-heading font-black leading-tight text-white drop-shadow-md">
+                            <?php echo htmlspecialchars($settings['school_name']); ?>
+                        </h2>
+                        
+                        <p class="text-base text-slate-200 font-light leading-relaxed drop-shadow mx-auto lg:mx-0">
+                            "<?php echo htmlspecialchars($settings['school_motto']); ?>"<br>
+                            <span class="text-slate-300"><?php echo htmlspecialchars($settings['banner_subtitle'] ?? 'เน้นทักษะชีวิต ความดีงาม คุณธรรมสูงส่ง ส่งผ่านความใส่ใจในระดับชั้น:'); ?></span> 
+                            <span class="text-white font-semibold underline decoration-pink-400"><?php echo htmlspecialchars($settings['levels']); ?></span>
+                        </p>
+
+                        <div class="flex flex-wrap gap-4 pt-2 justify-center lg:justify-start">
+                            <a href="#news" class="bg-school-pink hover:bg-school-pink-dark text-white px-7 py-3.5 rounded-2xl font-bold shadow-lg shadow-pink-500/20 transition-all hover:translate-y-[-2px] flex items-center gap-2 text-sm z-30">
+                                อ่านข่าวสารล่าสุด
+                            </a>
+                            <a href="#teachers" class="bg-white/10 hover:bg-white/15 text-white backdrop-blur px-7 py-3.5 rounded-2xl font-semibold border border-white/20 transition-all hover:translate-y-[-2px] text-sm z-30">
+                                ทำเนียบข้าราชการครู
+                            </a>
+                        </div>
                     </div>
                 </div>
+
             </div>
-
-            <!-- ฝั่งขวา: ข้อความและปุ่มคำสั่งหลัก ของหน้าโฮมเพจ (ย้ายมาฝั่งขวา ตกแต่งขอบเกลี่ยภาพสมดุล) -->
-            <div class="space-y-6 w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left order-2 lg:order-2">
-                <span class="inline-block bg-school-pink/15 text-pink-300 border border-school-pink/30 text-xs sm:text-sm md:text-base tracking-wider uppercase font-black px-5 py-2.5 rounded-full shadow-inner transition-transform duration-300">
-                    <?php echo htmlspecialchars($settings['banner_title'] ?? 'ยินดีต้อนรับสู่รั้วชมพู-ขาว แหล่งการศึกษาระดับเยาวชนต้นแบบ'); ?>
-                </span>
-                
-                <h2 class="text-3.5xl sm:text-5.5xl font-heading font-black leading-tight text-white drop-shadow-md">
-                    <?php echo htmlspecialchars($settings['school_name']); ?>
-                </h2>
-                
-                <p class="text-base max-w-xl text-slate-200 font-light leading-relaxed drop-shadow">
-                    "<?php echo htmlspecialchars($settings['school_motto']); ?>"<br>
-                    <span class="text-slate-300"><?php echo htmlspecialchars($settings['banner_subtitle'] ?? 'เน้นทักษะชีวิต ความดีงาม คุณธรรมสูงส่ง ส่งผ่านความใส่ใจในระดับชั้น:'); ?></span> 
-                    <span class="text-white font-semibold underline decoration-pink-400"><?php echo htmlspecialchars($settings['levels']); ?></span>
-                </p>
-
-                <div class="flex flex-wrap gap-4 pt-2 justify-center lg:justify-start">
-                    <a href="#news" class="bg-school-pink hover:bg-school-pink-dark text-white px-7 py-3.5 rounded-2xl font-bold shadow-lg shadow-pink-500/20 transition-all hover:translate-y-[-2px] flex items-center gap-2 text-sm">
-                        อ่านข่าวสารล่าสุด
-                    </a>
-                    <a href="#teachers" class="bg-white/10 hover:bg-white/15 text-white backdrop-blur px-7 py-3.5 rounded-2xl font-semibold border border-white/20 transition-all hover:translate-y-[-2px] text-sm">
-                        ทำเนียบข้าราชการครู
-                    </a>
-                </div>
-            </div>
-
         </div>
     </section>
 
